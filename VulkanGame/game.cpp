@@ -23,6 +23,34 @@ void Game::initWindow() {
 	window = glfwCreateWindow(constants::width, constants::height, constants::title, nullptr, nullptr);
 }
 
+std::vector<const char*> getRequiredExtensions() {
+	// keep track of number of available extensions
+	uint32_t numExtensions{ 0 };
+
+	// request number of extensions available
+	vkEnumerateInstanceExtensionProperties(nullptr, &numExtensions, nullptr);
+
+	// put available extensions into std::vector
+	std::vector<vk::ExtensionProperties> extensions(numExtensions);
+	vk::enumerateInstanceExtensionProperties(nullptr, &numExtensions, extensions.data());
+
+	std::cout << extensions.size() << " supported extensions.\n";
+
+	// reset counter
+	numExtensions = 0;
+
+	// get required extensions and convert to std::vector<string>
+	const char** reqExts{ glfwGetRequiredInstanceExtensions(&numExtensions) };
+	std::vector<const char *> required(reqExts, reqExts + numExtensions);
+
+	// additional extension if validation layers are included
+	if (constants::enableValidationLayers) {
+		required.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	}
+
+	return required;
+}
+
 bool Game::hasRequiredExtensions(const std::vector<const char *> &required, const std::vector<vk::ExtensionProperties> &available) {
 	// attempt to find required extensions inside available extensions
 	for (const auto &req : required) {
@@ -55,11 +83,7 @@ bool Game::hasValidationLayerSupport() {
 	std::vector<vk::LayerProperties> layers(numLayers);
 	vk::enumerateInstanceLayerProperties(&numLayers, layers.data());
 
-	std::cout << "Available layers (" << layers.size() << "):\n";
-
-	for (const auto &layer : layers) {
-		std::cout << '\t' << layer.layerName << '\n';
-	}
+	std::cout << layers.size() << " supported layers.\n";
 
 	// check if each validation layer is in available layers
 	for (const auto &valLayer : constants::validationLayers) {
@@ -82,17 +106,18 @@ bool Game::hasValidationLayerSupport() {
 }
 
 void Game::createInstance() {
+	// check support for validation layers
+	if (constants::enableValidationLayers && !hasValidationLayerSupport()) {
+		throw std::runtime_error("No support for validation layers!");
+	}
+
 	// inform driver about how to best optimise the application
 	vk::ApplicationInfo appInfo{};
 
-	// application name and version
 	appInfo.pApplicationName = "Testing Triangles";
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-
-	// engine name and version
 	appInfo.pEngineName = "Carbon Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-
 	appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
 	// tells driver which global extensions and validation layers to use
@@ -101,29 +126,7 @@ void Game::createInstance() {
 	// give driver application information
 	createInfo.pApplicationInfo = &appInfo;
 
-	// keep track of number of available extensions
-	uint32_t numExtensions{ 0 };
-
-	// request number of extensions available
-	vkEnumerateInstanceExtensionProperties(nullptr, &numExtensions, nullptr);
-
-	// put available extensions into std::vector
-	std::vector<vk::ExtensionProperties> extensions(numExtensions);
-	vk::enumerateInstanceExtensionProperties(nullptr, &numExtensions, extensions.data());
-
-	bool t = hasValidationLayerSupport();
-
-	std::cout << "Available extensions (" << extensions.size() << "):\n";
-
-	for (const auto &extension : extensions) {
-		std::cout << '\t' << extension.extensionName << '\n';
-	}
-
-	numExtensions = 0;
-
-	// get required extensions and convert to std::vector<string>
-	const char** reqExts{ glfwGetRequiredInstanceExtensions(&numExtensions) };
-	const std::vector<const char *> required(reqExts, reqExts + numExtensions);
+	const auto required{ getRequiredExtensions() };
 
 	// check if available extensions have required extensions
 	if (!hasRequiredExtensions(required, extensions)) {

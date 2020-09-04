@@ -33,6 +33,11 @@ private:
 	void initWindow();
 
 	/*
+	 * @returns The required extensions that Vulkan needs.
+	 */
+	std::vector<const char*> getRequiredExtensions();
+
+	/*
 	 * @brief Checks if the required extensions are available.
 	 * @param required The names of the required extensions.
 	 * @param available The currently available extensions.
@@ -68,4 +73,4 @@ private:
 	void cleanup();
 };
 
-#endif
+#endif // GAME_HPP
