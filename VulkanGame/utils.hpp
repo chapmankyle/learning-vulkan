@@ -5,7 +5,6 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.hpp>
 
 #include <iostream>
 
@@ -16,7 +15,7 @@ public:
 	/*
 	 * @returns The extensions that are available on the current machine.
 	 */
-	static std::vector<vk::ExtensionProperties> getAvailableExtensions();
+	static std::vector<VkExtensionProperties> getAvailableExtensions();
 
 	/*
 	 * @returns The required extensions that Vulkan needs.
@@ -31,7 +30,7 @@ public:
 	 */
 	static bool hasRequiredExtensions(
 		const std::vector<const char *> &required,
-		const std::vector<vk::ExtensionProperties> &available
+		const std::vector<VkExtensionProperties> &available
 	);
 
 	/*
@@ -57,6 +56,32 @@ public:
 		VkDebugUtilsMessageTypeFlagsEXT messageType,
 		const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
 		void *pUserData
+	);
+
+	/*
+	 * @brief Populates the `VkDebugUtilsMessengerCreateInfo` struct with debug information
+	 * that is relevant to display.
+	 * @param createInfo The debug messenger to fill.
+	 */
+	static void fillDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
+
+	/*
+	 * @brief Creates a debug utils messenger to use for debugging validation layers.
+	 */
+	static VkResult createDebugUtilsMessenger(
+		VkInstance instance,
+		const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+		const VkAllocationCallbacks *pAllocator,
+		VkDebugUtilsMessengerEXT *pDebugMessenger
+	);
+
+	/*
+	 * @brief Destroys the debug utils messenger and frees memory.
+	 */
+	static void destroyDebugUtilsMessenger(
+		VkInstance instance,
+		VkDebugUtilsMessengerEXT debugMessenger,
+		const VkAllocationCallbacks *pAllocator
 	);
 };
 
