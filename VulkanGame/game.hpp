@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <map>
 #include <vector>
 
 #include "utils.hpp"
@@ -30,6 +31,9 @@ private:
 	// debug messenger for validation layers
 	VkDebugUtilsMessengerEXT debugMessenger;
 
+	// device to use for graphics processing;
+	VkPhysicalDevice selectedDevice = VK_NULL_HANDLE;
+
 	/*
 	 * @brief Initializes a window.
 	 */
@@ -45,6 +49,11 @@ private:
 	 * @brief Sets up a messenger to display validation layer debug messages.
 	 */
 	void setupDebugMessenger();
+
+	/*
+	 * @brief Selects a graphics card that supports the necessary features.
+	 */
+	void pickPhysicalDevice();
 
 	/*
 	 * @brief Sets up the necessary background checks to create a Vulkan instance.

@@ -100,12 +100,52 @@ void Game::setupDebugMessenger() {
 	}
 }
 
+void Game::pickPhysicalDevice() {
+	// query number of graphics cards
+	uint32_t numDevices{ 0 };
+	vkEnumeratePhysicalDevices(instance, &numDevices, nullptr);
+
+	if (numDevices == 0) {
+		throw std::runtime_error("Failed to find any GPUs with Vulkan support!");
+	}
+
+	// store all devices in vector
+	std::vector<VkPhysicalDevice> devices(numDevices);
+	vkEnumeratePhysicalDevices(instance, &numDevices, devices.data());
+
+	// ordered map to automatically sort by device score
+	std::multimap<int, VkPhysicalDevice> candidates;
+
+	int score{ 0 };
+
+	// select single GPU to use as `selectedDevice`
+	for (const auto &device : devices) {
+		score = Utils::getDeviceScore(device);
+		candidates.insert(std::make_pair(score, device));
+	}
+
+	// check if best candidate is even suitable
+	if (candidates.rbegin()->first > 0) {
+		selectedDevice = candidates.rbegin()->second;
+	} else {
+		throw std::runtime_error("Failed to find a suitable GPU!");
+	}
+
+#ifndef NDEBUG
+	std::cout << "-- Selected device --\n";
+	Utils::showDeviceProperties(selectedDevice);
+#endif // !NDEBUG
+}
+
 void Game::initVulkan() {
 	// create the Vulkan instance
 	createInstance();
 
 	// setup a debug messenger
 	setupDebugMessenger();
+
+	// pick a single graphics card to use
+	pickPhysicalDevice();
 }
 
 void Game::main() {
