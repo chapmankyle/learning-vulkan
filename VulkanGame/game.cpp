@@ -36,18 +36,20 @@ void Game::createInstance() {
 	}
 
 	// inform driver about how to best optimise the application
-	vk::ApplicationInfo appInfo{};
+	VkApplicationInfo appInfo{};
 
-	appInfo.pApplicationName = "Testing Triangles";
+	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+	appInfo.pApplicationName = "Work In Progress: Game";
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "Carbon Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
 	// tells driver which global extensions and validation layers to use
-	vk::InstanceCreateInfo createInfo{};
+	VkInstanceCreateInfo createInfo{};
 
 	// give driver application information
+	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
 
 	const auto available{ Utils::getAvailableExtensions() };
@@ -62,17 +64,23 @@ void Game::createInstance() {
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(required.size());
 	createInfo.ppEnabledExtensionNames = required.data();
 
+	// for checking any errors during debug messenger creation and deletion
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
+
 	// enable validation layers if flag set
 	if (constants::enableValidationLayers) {
 		createInfo.enabledLayerCount = static_cast<uint32_t>(constants::validationLayers.size());
 		createInfo.ppEnabledLayerNames = constants::validationLayers.data();
+
+		Utils::fillDebugMessengerCreateInfo(debugCreateInfo);
+		createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debugCreateInfo;
 	} else {
 		createInfo.enabledLayerCount = 0;
 		createInfo.pNext = nullptr;
 	}
 
 	// attempt to create instance
-	if (vk::createInstance(&createInfo, nullptr, &instance) != vk::Result::eSuccess) {
+	if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create instance!");
 	}
 }
@@ -83,21 +91,13 @@ void Game::setupDebugMessenger() {
 		return;
 	}
 
-	vk::DebugUtilsMessengerCreateInfoEXT createInfo{};
+	VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+	Utils::fillDebugMessengerCreateInfo(createInfo);
 
-	// set message severities to display
-	createInfo.messageSeverity =
-		vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
-		vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
-		vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
-
-	createInfo.messageType =
-		vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
-		vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
-		vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
-
-	createInfo.pfnUserCallback = Utils::debugCallback;
-	createInfo.pUserData = nullptr;
+	// check result of creating debug messenger
+	if (Utils::createDebugUtilsMessenger(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to setup debug messenger!");
+	}
 }
 
 void Game::initVulkan() {
@@ -116,6 +116,14 @@ void Game::main() {
 }
 
 void Game::cleanup() {
+	// destory debug messenger
+	if (constants::enableValidationLayers) {
+		Utils::destroyDebugUtilsMessenger(instance, debugMessenger, nullptr);
+	}
+
+	// free instance
+	vkDestroyInstance(instance, nullptr);
+
 	// destroy and free window
 	glfwDestroyWindow(window);
 

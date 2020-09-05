@@ -5,7 +5,6 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -26,7 +25,10 @@ private:
 	GLFWwindow *window;
 
 	// vulkan instance
-	vk::Instance instance;
+	VkInstance instance;
+
+	// debug messenger for validation layers
+	VkDebugUtilsMessengerEXT debugMessenger;
 
 	/*
 	 * @brief Initializes a window.
