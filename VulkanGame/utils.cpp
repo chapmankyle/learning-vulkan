@@ -95,3 +95,16 @@ bool Utils::hasValidationLayerSupport() {
 
 	return true;
 }
+
+VKAPI_ATTR VkBool32 VKAPI_CALL Utils::debugCallback(
+	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+	VkDebugUtilsMessageTypeFlagsEXT messageType,
+	const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+	void *pUserData
+) {
+	// show debug message as error
+	std::cerr << "Validation layer: " << pCallbackData->pMessage << '\n';
+
+	return VK_FALSE;
+}
+
