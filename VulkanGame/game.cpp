@@ -58,9 +58,18 @@ void Game::createInstance() {
 		throw std::runtime_error("Failed to find required extensions!");
 	}
 
+	// enable required extensions
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(required.size());
 	createInfo.ppEnabledExtensionNames = required.data();
-	createInfo.enabledLayerCount = 0;
+
+	// enable validation layers if flag set
+	if (constants::enableValidationLayers) {
+		createInfo.enabledLayerCount = static_cast<uint32_t>(constants::validationLayers.size());
+		createInfo.ppEnabledLayerNames = constants::validationLayers.data();
+	} else {
+		createInfo.enabledLayerCount = 0;
+		createInfo.pNext = nullptr;
+	}
 
 	// attempt to create instance
 	if (vk::createInstance(&createInfo, nullptr, &instance) != vk::Result::eSuccess) {
@@ -68,9 +77,35 @@ void Game::createInstance() {
 	}
 }
 
+void Game::setupDebugMessenger() {
+	// no need for a debug messenger if validation layers are disabled
+	if (!constants::enableValidationLayers) {
+		return;
+	}
+
+	vk::DebugUtilsMessengerCreateInfoEXT createInfo{};
+
+	// set message severities to display
+	createInfo.messageSeverity =
+		vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose |
+		vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
+		vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
+
+	createInfo.messageType =
+		vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral |
+		vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation |
+		vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance;
+
+	createInfo.pfnUserCallback = Utils::debugCallback;
+	createInfo.pUserData = nullptr;
+}
+
 void Game::initVulkan() {
 	// create the Vulkan instance
 	createInstance();
+
+	// setup a debug messenger
+	setupDebugMessenger();
 }
 
 void Game::main() {

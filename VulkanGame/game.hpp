@@ -40,6 +40,11 @@ private:
 	void createInstance();
 
 	/*
+	 * @brief Sets up a messenger to display validation layer debug messages.
+	 */
+	void setupDebugMessenger();
+
+	/*
 	 * @brief Sets up the necessary background checks to create a Vulkan instance.
 	*/
 	void initVulkan();
