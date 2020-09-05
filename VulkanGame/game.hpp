@@ -11,6 +11,7 @@
 #include <iostream>
 #include <vector>
 
+#include "utils.hpp"
 #include "constants.hpp"
 
 class Game {
@@ -31,25 +32,6 @@ private:
 	 * @brief Initializes a window.
 	 */
 	void initWindow();
-
-	/*
-	 * @returns The required extensions that Vulkan needs.
-	 */
-	std::vector<const char*> getRequiredExtensions();
-
-	/*
-	 * @brief Checks if the required extensions are available.
-	 * @param required The names of the required extensions.
-	 * @param available The currently available extensions.
-	 * @returns `true` if the required extensions are present, `false` otherwise.
-	 */
-	bool hasRequiredExtensions(const std::vector<const char *> &required, const std::vector<vk::ExtensionProperties> &available);
-
-	/*
-	 * @brief Checks if all the requested layers are available.
-	 * @returns `true` if validation layers are supported, `false` otherwise.
-	 */
-	bool hasValidationLayerSupport();
 
 	/*
 	 * @brief Creates a Vulkan instance and checks if the GLFW required extensions are
