@@ -7,11 +7,26 @@
 #include <GLFW/glfw3.h>
 
 #include <iostream>
+#include <optional>
 
 #include "constants.hpp"
 
 class Utils {
 public:
+
+	struct QueueFamilyIndices {
+		// contains no value until something is assigned to it
+		std::optional<uint32_t> graphicsFamily;
+
+		/*
+		 * @brief Check if the `graphicsFamily` has been assigned a value.
+		 * @returns `true` if assigned a value, `false` otherwise.
+		 */
+		bool containsValue() {
+			return graphicsFamily.has_value();
+		}
+	};
+
 	/*
 	 * @returns The extensions that are available on the current machine.
 	 */
@@ -83,6 +98,32 @@ public:
 		VkDebugUtilsMessengerEXT debugMessenger,
 		const VkAllocationCallbacks *pAllocator
 	);
+
+	/*
+	 * @brief Display the properties from the given device properties.
+	 * @param deviceProps The device properties to display.
+	 */
+	static void showDeviceProperties(VkPhysicalDeviceProperties deviceProps);
+
+	/*
+	 * @brief Display the properties of the given device.
+	 * @param device The device to display the properties of.
+	 */
+	static void showDeviceProperties(VkPhysicalDevice device);
+
+	/*
+	 * @brief Find the queue families that support graphics commands.
+	 * @param device The device to check if contains the queue families.
+	 * @returns The indices of the queue families found in the device.
+	 */
+	static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
+	/*
+	 * @brief Computes a score based on what properties and features the device has.
+	 * @param device The physical device to compute a score for.
+	 * @returns A score of how well suited the device is to the needs of the application.
+	 */
+	static int getDeviceScore(VkPhysicalDevice device);
 };
 
 #endif // UTILS_HPP
