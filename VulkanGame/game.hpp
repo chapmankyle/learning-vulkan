@@ -32,7 +32,13 @@ private:
 	VkDebugUtilsMessengerEXT debugMessenger;
 
 	// device to use for graphics processing;
-	VkPhysicalDevice selectedDevice = VK_NULL_HANDLE;
+	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+
+	// logical device to interact with physical device
+	VkDevice device;
+
+	// handle to the graphics queue on logical device
+	VkQueue graphicsQueue;
 
 	/*
 	 * @brief Initializes a window.
@@ -54,6 +60,11 @@ private:
 	 * @brief Selects a graphics card that supports the necessary features.
 	 */
 	void pickPhysicalDevice();
+
+	/*
+	 * @brief Creates a logical device that will interact with physical device.
+	 */
+	void createLogicalDevice();
 
 	/*
 	 * @brief Sets up the necessary background checks to create a Vulkan instance.

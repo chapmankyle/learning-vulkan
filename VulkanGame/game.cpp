@@ -118,23 +118,65 @@ void Game::pickPhysicalDevice() {
 
 	int score{ 0 };
 
-	// select single GPU to use as `selectedDevice`
-	for (const auto &device : devices) {
-		score = Utils::getDeviceScore(device);
-		candidates.insert(std::make_pair(score, device));
+	// select single GPU to use as `physicalDevice`
+	for (const auto &d : devices) {
+		score = Utils::getDeviceScore(d);
+		candidates.insert(std::make_pair(score, d));
 	}
 
 	// check if best candidate is even suitable
 	if (candidates.rbegin()->first > 0) {
-		selectedDevice = candidates.rbegin()->second;
+		physicalDevice = candidates.rbegin()->second;
 	} else {
 		throw std::runtime_error("Failed to find a suitable GPU!");
 	}
 
 #ifndef NDEBUG
 	std::cout << "-- Selected device --\n";
-	Utils::showDeviceProperties(selectedDevice);
+	Utils::showDeviceProperties(physicalDevice);
 #endif // !NDEBUG
+}
+
+void Game::createLogicalDevice() {
+	// find queue family index
+	Utils::QueueFamilyIndices index{ Utils::findQueueFamilies(physicalDevice) };
+
+	VkDeviceQueueCreateInfo queueCreateInfo{};
+
+	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queueCreateInfo.queueFamilyIndex = index.graphicsFamily.value();
+	queueCreateInfo.queueCount = 1;
+
+	// priority given to this queue
+	float queuePriority = 1.0f;
+	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	// specify device features to use (such as geometry shaders etc)
+	VkPhysicalDeviceFeatures deviceFeats{};
+
+	// start creating device info
+	VkDeviceCreateInfo createInfo{};
+
+	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	createInfo.pQueueCreateInfos = &queueCreateInfo;
+	createInfo.queueCreateInfoCount = 1;
+	createInfo.pEnabledFeatures = &deviceFeats;
+	createInfo.enabledExtensionCount = 0;
+
+	if (constants::enableValidationLayers) {
+		createInfo.enabledLayerCount = static_cast<uint32_t>(constants::validationLayers.size());
+		createInfo.ppEnabledLayerNames = constants::validationLayers.data();
+	} else {
+		createInfo.enabledLayerCount = 0;
+	}
+
+	// attempt to create device
+	if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create a logical device!");
+	}
+
+	// create single graphics queue from device
+	vkGetDeviceQueue(device, index.graphicsFamily.value(), 0, &graphicsQueue);
 }
 
 void Game::initVulkan() {
@@ -146,6 +188,9 @@ void Game::initVulkan() {
 
 	// pick a single graphics card to use
 	pickPhysicalDevice();
+
+	// create and link logical device to physical device
+	createLogicalDevice();
 }
 
 void Game::main() {
@@ -156,6 +201,9 @@ void Game::main() {
 }
 
 void Game::cleanup() {
+	// destroy logical device
+	vkDestroyDevice(device, nullptr);
+
 	// destory debug messenger
 	if (constants::enableValidationLayers) {
 		Utils::destroyDebugUtilsMessenger(instance, debugMessenger, nullptr);
