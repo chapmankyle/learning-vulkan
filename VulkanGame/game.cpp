@@ -100,6 +100,13 @@ void Game::setupDebugMessenger() {
 	}
 }
 
+void Game::createSurface() {
+	// attempt to create window surface
+	if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create window surface!");
+	}
+}
+
 void Game::pickPhysicalDevice() {
 	// query number of graphics cards
 	uint32_t numDevices{ 0 };
@@ -120,7 +127,7 @@ void Game::pickPhysicalDevice() {
 
 	// select single GPU to use as `physicalDevice`
 	for (const auto &d : devices) {
-		score = Utils::getDeviceScore(d);
+		score = Utils::getDeviceScore(d, surface);
 		candidates.insert(std::make_pair(score, d));
 	}
 
@@ -139,27 +146,36 @@ void Game::pickPhysicalDevice() {
 
 void Game::createLogicalDevice() {
 	// find queue family index
-	Utils::QueueFamilyIndices index{ Utils::findQueueFamilies(physicalDevice) };
+	Utils::QueueFamilyIndices indices{ Utils::findQueueFamilies(physicalDevice, surface) };
 
-	VkDeviceQueueCreateInfo queueCreateInfo{};
-
-	queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queueCreateInfo.queueFamilyIndex = index.graphicsFamily.value();
-	queueCreateInfo.queueCount = 1;
+	std::vector<VkDeviceQueueCreateInfo> createInfoQueues;
+	std::set<uint32_t> uniqueQueueFamilies = {
+		indices.graphicsFamily.value(),
+		indices.presentFamily.value()
+	};
 
 	// priority given to this queue
 	float queuePriority = 1.0f;
-	queueCreateInfo.pQueuePriorities = &queuePriority;
+
+	for (uint32_t queueFam : uniqueQueueFamilies) {
+		VkDeviceQueueCreateInfo queueCreateInfo{};
+		queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+
+		queueCreateInfo.queueFamilyIndex = queueFam;
+		queueCreateInfo.queueCount = 1;
+		queueCreateInfo.pQueuePriorities = &queuePriority;
+		createInfoQueues.push_back(queueCreateInfo);
+	}
 
 	// specify device features to use (such as geometry shaders etc)
 	VkPhysicalDeviceFeatures deviceFeats{};
 
 	// start creating device info
 	VkDeviceCreateInfo createInfo{};
-
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-	createInfo.pQueueCreateInfos = &queueCreateInfo;
-	createInfo.queueCreateInfoCount = 1;
+
+	createInfo.queueCreateInfoCount = static_cast<uint32_t>(createInfoQueues.size());
+	createInfo.pQueueCreateInfos = createInfoQueues.data();
 	createInfo.pEnabledFeatures = &deviceFeats;
 	createInfo.enabledExtensionCount = 0;
 
@@ -176,7 +192,8 @@ void Game::createLogicalDevice() {
 	}
 
 	// create single graphics queue from device
-	vkGetDeviceQueue(device, index.graphicsFamily.value(), 0, &graphicsQueue);
+	vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+	vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &graphicsQueue);
 }
 
 void Game::initVulkan() {
@@ -185,6 +202,9 @@ void Game::initVulkan() {
 
 	// setup a debug messenger
 	setupDebugMessenger();
+
+	// create KHR surface
+	createSurface();
 
 	// pick a single graphics card to use
 	pickPhysicalDevice();
@@ -208,6 +228,9 @@ void Game::cleanup() {
 	if (constants::enableValidationLayers) {
 		Utils::destroyDebugUtilsMessenger(instance, debugMessenger, nullptr);
 	}
+
+	// destory surface
+	vkDestroySurfaceKHR(instance, surface, nullptr);
 
 	// free instance
 	vkDestroyInstance(instance, nullptr);

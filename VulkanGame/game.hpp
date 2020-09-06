@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <set>
 #include <vector>
 
 #include "utils.hpp"
@@ -37,8 +38,14 @@ private:
 	// logical device to interact with physical device
 	VkDevice device;
 
+	// surface to present rendered images to
+	VkSurfaceKHR surface;
+
 	// handle to the graphics queue on logical device
 	VkQueue graphicsQueue;
+
+	// handle to presentation of rendered images queue
+	VkQueue presentQueue;
 
 	/*
 	 * @brief Initializes a window.
@@ -55,6 +62,11 @@ private:
 	 * @brief Sets up a messenger to display validation layer debug messages.
 	 */
 	void setupDebugMessenger();
+
+	/*
+	 * @brief Creates a surface to present rendered images to.
+	 */
+	void createSurface();
 
 	/*
 	 * @brief Selects a graphics card that supports the necessary features.
