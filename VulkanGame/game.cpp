@@ -31,7 +31,7 @@ void Game::initWindow() {
 
 void Game::createInstance() {
 	// check support for validation layers
-	if (constants::enableValidationLayers && !Utils::hasValidationLayerSupport()) {
+	if (constants::enableValidationLayers && !carbon::utils::hasValidationLayerSupport()) {
 		throw std::runtime_error("No support for validation layers!");
 	}
 
@@ -52,11 +52,10 @@ void Game::createInstance() {
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
 
-	const auto available{ Utils::getAvailableExtensions() };
-	const auto required{ Utils::getRequiredExtensions() };
+	const auto required{ carbon::utils::getRequiredExtensions() };
 
 	// check if available extensions have required extensions
-	if (!Utils::hasRequiredExtensions(required, available)) {
+	if (!carbon::utils::hasExtensionSupport()) {
 		throw std::runtime_error("Failed to find required extensions!");
 	}
 
