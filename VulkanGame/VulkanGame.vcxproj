@@ -159,12 +159,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="common\utils.cpp" />
+    <ClCompile Include="core\instance.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="common\utils.hpp" />
     <ClInclude Include="constants.hpp" />
+    <ClInclude Include="core\instance.hpp" />
     <ClInclude Include="game.hpp" />
     <ClInclude Include="utils.hpp" />
   </ItemGroup>
