@@ -155,7 +155,7 @@ void Utils::destroyDebugUtilsMessenger(
 	}
 }
 
-void Utils::showDeviceProperties(VkPhysicalDeviceProperties deviceProps) {
+void Utils::showDeviceProperties(const VkPhysicalDeviceProperties &deviceProps) {
 	const char *devType;
 	switch (deviceProps.deviceType) {
 		case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
@@ -185,7 +185,7 @@ void Utils::showDeviceProperties(VkPhysicalDeviceProperties deviceProps) {
 	std::cout << "                  Maximum number of viewports: " << deviceProps.limits.maxViewports << "\n\n";
 }
 
-void Utils::showDeviceProperties(VkPhysicalDevice device) {
+void Utils::showDeviceProperties(const VkPhysicalDevice &device) {
 	// get properties of device
 	VkPhysicalDeviceProperties deviceProps;
 	vkGetPhysicalDeviceProperties(device, &deviceProps);
@@ -193,8 +193,8 @@ void Utils::showDeviceProperties(VkPhysicalDevice device) {
 	showDeviceProperties(deviceProps);
 }
 
-Utils::QueueFamilyIndices Utils::findQueueFamilies(VkPhysicalDevice device) {
-	Utils::QueueFamilyIndices index;
+Utils::QueueFamilyIndices Utils::findQueueFamilies(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
+	Utils::QueueFamilyIndices indices;
 
 	// get number of queue families
 	uint32_t numQueueFamilies{ 0 };
@@ -209,17 +209,28 @@ Utils::QueueFamilyIndices Utils::findQueueFamilies(VkPhysicalDevice device) {
 	// find first index of queue family that supports graphics commands
 	for (const auto &queueFam : queueFamilies) {
 		if (queueFam.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-			index.graphicsFamily = i;
+			indices.graphicsFamily = i;
+		}
+
+		// query surface support
+		VkBool32 presentSupport{ false };
+		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+
+		if (presentSupport) {
+			indices.presentFamily = i;
+		}
+
+		if (indices.containsValue()) {
 			break;
 		}
 
 		i++;
 	}
 
-	return index;
+	return indices;
 }
 
-int Utils::getDeviceScore(VkPhysicalDevice device) {
+int Utils::getDeviceScore(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
 	// device properties (name, type, supported Vulkan version etc.)
 	VkPhysicalDeviceProperties deviceProps;
 	vkGetPhysicalDeviceProperties(device, &deviceProps);
@@ -238,7 +249,7 @@ int Utils::getDeviceScore(VkPhysicalDevice device) {
 	}
 
 	// find queue family that supports needed computation
-	QueueFamilyIndices index{ findQueueFamilies(device) };
+	QueueFamilyIndices index{ findQueueFamilies(device, surface) };
 
 	if (!index.containsValue()) {
 		return 0;

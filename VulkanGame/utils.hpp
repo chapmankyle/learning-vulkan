@@ -17,13 +17,14 @@ public:
 	struct QueueFamilyIndices {
 		// contains no value until something is assigned to it
 		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
 
 		/*
 		 * @brief Check if the `graphicsFamily` has been assigned a value.
 		 * @returns `true` if assigned a value, `false` otherwise.
 		 */
 		bool containsValue() {
-			return graphicsFamily.has_value();
+			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
 	};
 
@@ -103,27 +104,29 @@ public:
 	 * @brief Display the properties from the given device properties.
 	 * @param deviceProps The device properties to display.
 	 */
-	static void showDeviceProperties(VkPhysicalDeviceProperties deviceProps);
+	static void showDeviceProperties(const VkPhysicalDeviceProperties &deviceProps);
 
 	/*
 	 * @brief Display the properties of the given device.
 	 * @param device The device to display the properties of.
 	 */
-	static void showDeviceProperties(VkPhysicalDevice device);
+	static void showDeviceProperties(const VkPhysicalDevice &device);
 
 	/*
 	 * @brief Find the queue families that support graphics commands.
 	 * @param device The device to check if contains the queue families.
+	 * @param surface The surface to query surface support for.
 	 * @returns The indices of the queue families found in the device.
 	 */
-	static QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+	static QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
 
 	/*
 	 * @brief Computes a score based on what properties and features the device has.
 	 * @param device The physical device to compute a score for.
+	 * @param surface The surface to present rendered images to.
 	 * @returns A score of how well suited the device is to the needs of the application.
 	 */
-	static int getDeviceScore(VkPhysicalDevice device);
+	static int getDeviceScore(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
 };
 
 #endif // UTILS_HPP
