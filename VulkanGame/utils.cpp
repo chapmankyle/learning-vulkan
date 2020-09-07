@@ -230,6 +230,26 @@ Utils::QueueFamilyIndices Utils::findQueueFamilies(const VkPhysicalDevice &devic
 	return indices;
 }
 
+bool Utils::hasDeviceExtensionSupport(const VkPhysicalDevice &device) {
+	// query device extension properties
+	uint32_t numExtensions{ 0 };
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &numExtensions, nullptr);
+
+	// put into vector
+	std::vector<VkExtensionProperties> available(numExtensions);
+	vkEnumerateDeviceExtensionProperties(device, nullptr, &numExtensions, available.data());
+
+	std::set<std::string> required(constants::deviceExtensions.begin(), constants::deviceExtensions.end());
+
+	// remove each found extension
+	for (const auto& ext : available) {
+		required.erase(ext.extensionName);
+	}
+
+	// empty if all extensions were found and removed
+	return required.empty();
+}
+
 int Utils::getDeviceScore(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
 	// device properties (name, type, supported Vulkan version etc.)
 	VkPhysicalDeviceProperties deviceProps;
@@ -245,6 +265,11 @@ int Utils::getDeviceScore(const VkPhysicalDevice &device, const VkSurfaceKHR &su
 
 	// cannot function without geometry shader
 	if (!deviceFeats.geometryShader) {
+		return 0;
+	}
+
+	// cannot use swap chain without device extensions
+	if (!hasDeviceExtensionSupport(device)) {
 		return 0;
 	}
 
@@ -266,5 +291,26 @@ int Utils::getDeviceScore(const VkPhysicalDevice &device, const VkSurfaceKHR &su
 	score += deviceProps.limits.maxImageDimension2D;
 
 	return score;
+}
+
+Utils::SwapChainSupportDetails Utils::querySwapChainSupport(
+	const VkPhysicalDevice &device,
+	const VkSurfaceKHR &surface
+) {
+	SwapChainSupportDetails details;
+
+	// get surface capabilities
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+	// query supported surface formats
+	uint32_t formatCount{ 0 };
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+	if (formatCount != 0) {
+		details.formats.resize(formatCount);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+	}
+
+	return details;
 }
 

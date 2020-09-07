@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <optional>
+#include <set>
 
 #include "constants.hpp"
 
@@ -26,6 +27,12 @@ public:
 		bool containsValue() {
 			return graphicsFamily.has_value() && presentFamily.has_value();
 		}
+	};
+
+	struct SwapChainSupportDetails {
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> presentMode;
 	};
 
 	/*
@@ -121,12 +128,29 @@ public:
 	static QueueFamilyIndices findQueueFamilies(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
 
 	/*
+	 * @brief Checks if the device has extension support.
+	 * @param device The device to check if extensions are supported.
+	 * @returns `true` if the device has extension support, `false` otherwise.
+	 */
+	static bool hasDeviceExtensionSupport(const VkPhysicalDevice &device);
+
+	/*
 	 * @brief Computes a score based on what properties and features the device has.
 	 * @param device The physical device to compute a score for.
 	 * @param surface The surface to present rendered images to.
 	 * @returns A score of how well suited the device is to the needs of the application.
 	 */
 	static int getDeviceScore(const VkPhysicalDevice &device, const VkSurfaceKHR &surface);
+
+	/*
+	 * @brief Queries the swapchain support of a device.
+	 * @param device The device to query swapchain support from.
+	 * @param surface The surface to use.
+	 */
+	static SwapChainSupportDetails querySwapChainSupport(
+		const VkPhysicalDevice &device,
+		const VkSurfaceKHR &surface
+	);
 };
 
 #endif // UTILS_HPP
