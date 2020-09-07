@@ -176,8 +176,11 @@ void Game::createLogicalDevice() {
 
 	createInfo.queueCreateInfoCount = static_cast<uint32_t>(createInfoQueues.size());
 	createInfo.pQueueCreateInfos = createInfoQueues.data();
+
 	createInfo.pEnabledFeatures = &deviceFeats;
-	createInfo.enabledExtensionCount = 0;
+
+	createInfo.enabledExtensionCount = static_cast<uint32_t>(constants::deviceExtensions.size());
+	createInfo.ppEnabledExtensionNames = constants::deviceExtensions.data();
 
 	if (constants::enableValidationLayers) {
 		createInfo.enabledLayerCount = static_cast<uint32_t>(constants::validationLayers.size());
