@@ -273,6 +273,12 @@ int Utils::getDeviceScore(const VkPhysicalDevice &device, const VkSurfaceKHR &su
 		return 0;
 	}
 
+	// check swap chain support
+	SwapChainSupportDetails swapChainSupport{ querySwapChainSupport(device, surface) };
+	if (!swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty()) {
+		return 0;
+	}
+
 	// find queue family that supports needed computation
 	QueueFamilyIndices index{ findQueueFamilies(device, surface) };
 
@@ -311,6 +317,55 @@ Utils::SwapChainSupportDetails Utils::querySwapChainSupport(
 		vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
 	}
 
+	// query supported presentation modes
+	uint32_t presentModeCount{ 0 };
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+	if (presentModeCount != 0) {
+		details.presentModes.resize(presentModeCount);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+	}
+
 	return details;
+}
+
+
+VkSurfaceFormatKHR Utils::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats) {
+	// B8G8R8A8 -> store as B, G, R and A in that order (as 8 bit unsigned integers, so 32 bits per pixel)
+	// SRGB is standard format for textures
+	for (const auto &fmt : availableFormats) {
+		if (fmt.format == VK_FORMAT_B8G8R8A8_SRGB && fmt.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+			return fmt;
+		}
+	}
+
+	return availableFormats[0];
+}
+
+
+VkPresentModeKHR Utils::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
+	for (const auto &presentMode : availablePresentModes) {
+		if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+			return presentMode;
+		}
+	}
+
+	return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+
+VkExtent2D Utils::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
+	if (capabilities.currentExtent.width != UINT32_MAX) {
+		return capabilities.currentExtent;
+	}
+
+	// create extent with current window bounds
+	VkExtent2D extent{ constants::width, constants::height };
+
+	// clamp values between allowed min and max extents
+	extent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, extent.width));
+	extent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, extent.height));
+
+	return extent;
 }
 

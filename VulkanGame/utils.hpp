@@ -6,6 +6,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <algorithm> // for std::min() and std::max()
+#include <cstdint>   // for UINT32_MAX
 #include <iostream>
 #include <optional>
 #include <set>
@@ -32,7 +34,7 @@ public:
 	struct SwapChainSupportDetails {
 		VkSurfaceCapabilitiesKHR capabilities;
 		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentMode;
+		std::vector<VkPresentModeKHR> presentModes;
 	};
 
 	/*
@@ -151,6 +153,39 @@ public:
 		const VkPhysicalDevice &device,
 		const VkSurfaceKHR &surface
 	);
+
+	/*
+	 * @brief Choose a suitable swap-surface format for best possible swap chain.
+	 * @param availableFormats The currently available surface formats.
+	 * @returns The format to use for the swap chain.
+	 */
+	static VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
+
+	/*
+	 * @brief Choose a presentation mode for the swap chain. The most important setting for the
+	 * swap chain. Available formats include:
+	 * - VK_PRESENT_MODE_IMMEDIATE_KHR : images submitted are immediately displayed to screen (tearing)
+	 * - VK_PRESENT_MODE_FIFO_KHR : display takes image from front of queue and program inserts rendered
+	 * images at back of queue. If queue is full, program was to wait. Similar to vertical sync (vsync).
+	 * - VK_PRESENT_MODE_FIFO_RELAXED : if queue is empty, instead of waiting for vertcial blank (moment
+	 * the display is refreshed), the image is immediately displayed.
+	 * - VK_PRESENT_MODE_MAILBOX_KHR : instead of blocking application when queue is full, the images
+	 * that are already queued are replaced with newer ones. Can be used to implement triple buffering,
+	 * as opposed to double buffering used by vsync.
+	 * @param availablePresentModes The currently available presentation modes.
+	 * @returns The presentation mode to use for the swap chain.
+	 */
+	static VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
+
+	/*
+	 * @brief Choose the resolution of the swap chain images. Width and height of image is in
+	 * `currentExtent` member, but if set to UINT32_MAX, then we set the resolution to one
+	 * that best matches the window within the `minImageExtent` and `maxImageExtent` bounds.
+	 * @param capabilities The range of possible resolutions.
+	 * @returns The resolution that the swap chain images will be rendered in.
+	 */
+	static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+
 };
 
 #endif // UTILS_HPP
