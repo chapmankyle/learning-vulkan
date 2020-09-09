@@ -50,6 +50,13 @@ private:
 	// actual swapchain
 	VkSwapchainKHR swapChain;
 
+	std::vector<VkImage> swapchainImages;
+	VkFormat swapchainImageFormat;
+	VkExtent2D swapchainExtent;
+
+	// image views from the swapchain
+	std::vector<VkImageView> swapchainImageViews;
+
 	/*
 	 * @brief Initializes a window.
 	 */
@@ -85,6 +92,11 @@ private:
 	 * @brief Creates the swapchain for Vulkan to use.
 	 */
 	void createSwapchain();
+
+	/*
+	 * @brief Creates the image views for the swapchain.
+	 */
+	void createImageViews();
 
 	/*
 	 * @brief Sets up the necessary background checks to create a Vulkan instance.
