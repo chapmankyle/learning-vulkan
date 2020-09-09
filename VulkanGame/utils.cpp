@@ -175,14 +175,14 @@ void Utils::showDeviceProperties(const VkPhysicalDeviceProperties &deviceProps) 
 			break;
 	}
 
-	std::cout << "[Physical Device] Name: " << deviceProps.deviceName << '\n';
-	std::cout << "                  Type: " << devType << '\n';
-	std::cout << "                  Vendor ID: " << deviceProps.vendorID << '\n';
-	std::cout << "                  Maximum clip distances: " << deviceProps.limits.maxClipDistances << '\n';
-	std::cout << "                  Maximum cull distances: " << deviceProps.limits.maxCullDistances << '\n';
-	std::cout << "                  Maximum size of 2D textures: " << deviceProps.limits.maxImageDimension2D << '\n';
-	std::cout << "                  Maximum size of 3D textures: " << deviceProps.limits.maxImageDimension3D << '\n';
-	std::cout << "                  Maximum number of viewports: " << deviceProps.limits.maxViewports << "\n\n";
+	std::cout << "[Physical Device] " << deviceProps.deviceName << '\n';
+	std::cout << "\tType: " << devType << '\n';
+	std::cout << "\tVendor ID: " << deviceProps.vendorID << '\n';
+	std::cout << "\tMaximum clip distances: " << deviceProps.limits.maxClipDistances << '\n';
+	std::cout << "\tMaximum cull distances: " << deviceProps.limits.maxCullDistances << '\n';
+	std::cout << "\tMaximum size of 2D textures: " << deviceProps.limits.maxImageDimension2D << '\n';
+	std::cout << "\tMaximum size of 3D textures: " << deviceProps.limits.maxImageDimension3D << '\n';
+	std::cout << "\tMaximum number of viewports: " << deviceProps.limits.maxViewports << '\n';
 }
 
 void Utils::showDeviceProperties(const VkPhysicalDevice &device) {
@@ -275,7 +275,7 @@ int Utils::getDeviceScore(const VkPhysicalDevice &device, const VkSurfaceKHR &su
 
 	// check swap chain support
 	SwapChainSupportDetails swapChainSupport{ querySwapChainSupport(device, surface) };
-	if (!swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty()) {
+	if (swapChainSupport.formats.empty() || swapChainSupport.presentModes.empty()) {
 		return 0;
 	}
 
@@ -295,6 +295,10 @@ int Utils::getDeviceScore(const VkPhysicalDevice &device, const VkSurfaceKHR &su
 
 	// maximum size of textures affects quality
 	score += deviceProps.limits.maxImageDimension2D;
+
+#ifndef NDEBUG
+	std::cout << "\tScore: " << score << "\n\n";
+#endif // !NDEBUG
 
 	return score;
 }
