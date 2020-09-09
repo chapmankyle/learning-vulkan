@@ -47,6 +47,9 @@ private:
 	// handle to presentation of rendered images queue
 	VkQueue presentQueue;
 
+	// actual swapchain
+	VkSwapchainKHR swapChain;
+
 	/*
 	 * @brief Initializes a window.
 	 */

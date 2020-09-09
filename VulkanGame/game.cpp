@@ -229,6 +229,65 @@ void Game::createSwapchain() {
 	if (swapchainSupport.capabilities.maxImageCount > 0 && imageCount > swapchainSupport.capabilities.maxImageCount) {
 		imageCount = swapchainSupport.capabilities.maxImageCount;
 	}
+
+	// fill in swapchain info
+	VkSwapchainCreateInfoKHR createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+
+	// specify surface to which the swap chain is tied
+	createInfo.surface = surface;
+
+	// fill in details of swap chain images
+	createInfo.minImageCount = imageCount;
+	createInfo.imageFormat = surfaceFormat.format;
+	createInfo.imageColorSpace = surfaceFormat.colorSpace;
+	createInfo.imageExtent = extent;
+	createInfo.imageArrayLayers = 1; // specifies number of layers each image consists of
+	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; // specifies kind of operations that image will be used for
+	// VK_IMAGE_USAGE_TRANSFER_DST_BIT -> used when rendering images to seperate image for post-processing
+
+	// specify how to handle swap chain images that will be used across multiple queue families
+	Utils::QueueFamilyIndices indices{ Utils::findQueueFamilies(physicalDevice, surface) };
+	uint32_t queueIndices[]{ indices.graphicsFamily.value(), indices.presentFamily.value() };
+
+#ifndef NDEBUG
+	std::cout << "\nGraphics family index: " << indices.graphicsFamily.value() << '\n';
+	std::cout << "Presentation family index: " << indices.presentFamily.value() << '\n';
+#endif // !NDEBUG
+
+	// ways to handle images accessed from multiple queues
+	// - VK_SHARING_MODE_EXCLUSIVE : image is owned by one queue family at a time and ownership
+	//   must be explicitly transferred before being used by another queue family (best performance)
+	// - VK_SHARING_MODE_CONCURRENT : images can be used across multiple queue families without
+	//   explicit ownership transfers
+	if (indices.graphicsFamily != indices.presentFamily) {
+		createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+		createInfo.queueFamilyIndexCount = 2;
+		createInfo.pQueueFamilyIndices = queueIndices;
+	} else {
+		createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		createInfo.queueFamilyIndexCount = 0;
+		createInfo.pQueueFamilyIndices = nullptr;
+	}
+
+	// you can apply a transform to the image (set to current transform for no transformation)
+	createInfo.preTransform = swapchainSupport.capabilities.currentTransform;
+
+	// ignore alpha channel (can be used for blending with other windows)
+	createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+
+	createInfo.presentMode = presentMode;
+
+	// clip objects that are obscured (best performance)
+	createInfo.clipped = VK_TRUE;
+
+	// can specify previous swapchain if current one becomes invalid or unoptimized
+	createInfo.oldSwapchain = VK_NULL_HANDLE;
+
+	// create swapchain
+	if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create swapchain!");
+	}
 }
 
 
@@ -260,6 +319,9 @@ void Game::main() {
 }
 
 void Game::cleanup() {
+	// destroys the swap chain
+	vkDestroySwapchainKHR(device, swapChain, nullptr);
+
 	// destroy logical device
 	vkDestroyDevice(device, nullptr);
 
@@ -280,3 +342,4 @@ void Game::cleanup() {
 	// close up all processes
 	glfwTerminate();
 }
+
