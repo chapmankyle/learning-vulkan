@@ -79,6 +79,11 @@ private:
 	void createLogicalDevice();
 
 	/*
+	 * @brief Creates the swapchain for Vulkan to use.
+	 */
+	void createSwapchain();
+
+	/*
 	 * @brief Sets up the necessary background checks to create a Vulkan instance.
 	*/
 	void initVulkan();

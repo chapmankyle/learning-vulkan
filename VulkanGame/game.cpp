@@ -199,6 +199,23 @@ void Game::createLogicalDevice() {
 	vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &graphicsQueue);
 }
 
+
+void Game::createSwapchain() {
+	Utils::SwapChainSupportDetails swapchainSupport{ Utils::querySwapChainSupport(physicalDevice, surface) };
+
+	// get surface formate, present mode and extent
+	VkSurfaceFormatKHR surfaceFormat{ Utils::chooseSwapSurfaceFormat(swapchainSupport.formats) };
+	VkPresentModeKHR presentMode{ Utils::chooseSwapPresentMode(swapchainSupport.presentModes) };
+	VkExtent2D extent{ Utils::chooseSwapExtent(swapchainSupport.capabilities) };
+
+	// choose number of images to have in swap chain
+	uint32_t imageCount{ swapchainSupport.capabilities.minImageCount + 1 };
+	if (swapchainSupport.capabilities.maxImageCount > 0 && imageCount > swapchainSupport.capabilities.maxImageCount) {
+		imageCount = swapchainSupport.capabilities.maxImageCount;
+	}
+}
+
+
 void Game::initVulkan() {
 	// create the Vulkan instance
 	createInstance();
@@ -214,6 +231,9 @@ void Game::initVulkan() {
 
 	// create and link logical device to physical device
 	createLogicalDevice();
+
+	// create the swap chain
+	createSwapchain();
 }
 
 void Game::main() {
