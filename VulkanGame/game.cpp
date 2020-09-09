@@ -125,6 +125,10 @@ void Game::pickPhysicalDevice() {
 
 	int score{ 0 };
 
+#ifndef NDEBUG
+	std::cout << '\n';
+#endif // !NDEBUG
+
 	// select single GPU to use as `physicalDevice`
 	for (const auto &d : devices) {
 		score = Utils::getDeviceScore(d, surface);
@@ -202,6 +206,18 @@ void Game::createLogicalDevice() {
 
 void Game::createSwapchain() {
 	Utils::SwapChainSupportDetails swapchainSupport{ Utils::querySwapChainSupport(physicalDevice, surface) };
+
+#ifndef NDEBUG
+	std::cout << "\n-- Physical device capabilities --\n";
+	std::cout << "\twidth = " << swapchainSupport.capabilities.currentExtent.width << '\n';
+	std::cout << "\theight = " << swapchainSupport.capabilities.currentExtent.height << '\n';
+	std::cout << "\tmax image count = " << swapchainSupport.capabilities.maxImageCount << '\n';
+	std::cout << "\tmin image count = " << swapchainSupport.capabilities.minImageCount << '\n';
+	std::cout << "\tmax image extent (width) = " << swapchainSupport.capabilities.maxImageExtent.width << '\n';
+	std::cout << "\tmax image extent (height) = " << swapchainSupport.capabilities.maxImageExtent.height << '\n';
+	std::cout << "\tmin image extent (width) = " << swapchainSupport.capabilities.minImageExtent.width << '\n';
+	std::cout << "\tmin image extent (height) = " << swapchainSupport.capabilities.minImageExtent.height << '\n';
+#endif // !NDEBUG
 
 	// get surface formate, present mode and extent
 	VkSurfaceFormatKHR surfaceFormat{ Utils::chooseSwapSurfaceFormat(swapchainSupport.formats) };
