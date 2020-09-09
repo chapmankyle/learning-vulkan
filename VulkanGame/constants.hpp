@@ -13,8 +13,8 @@ namespace constants {
 	inline constexpr bool enableValidationLayers = true;
 #endif // NDEBUG
 
-	inline constexpr int width{ 1920 };
-	inline constexpr int height{ 1080 };
+	inline constexpr int width{ 1280 };
+	inline constexpr int height{ 720 };
 
 	inline constexpr bool fullscreen{ false };
 
