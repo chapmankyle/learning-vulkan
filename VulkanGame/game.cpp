@@ -335,7 +335,38 @@ void Game::createImageViews() {
 
 
 void Game::createGraphicsPipeline() {
+	// get bytecode of shaders
+	std::vector<char> vertShaderCode{ Utils::readFile("shaders/vert.spv") };
+	std::vector<char> fragShaderCode{ Utils::readFile("shaders/frag.spv") };
 
+#ifndef NDEBUG
+	std::cout << "\nVertex shader size : " << vertShaderCode.size() << " bytes\n";
+	std::cout << "Fragment shader size : " << fragShaderCode.size() << " bytes\n";
+#endif // NDEBUG
+
+	// create modules from bytecode
+	VkShaderModule vertShaderModule{ Utils::createShaderModule(device, vertShaderCode) };
+	VkShaderModule fragShaderModule{ Utils::createShaderModule(device, fragShaderCode) };
+
+	// create vertex pipeline stage
+	VkPipelineShaderStageCreateInfo vertShaderInfo{};
+	vertShaderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	vertShaderInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	vertShaderInfo.module = vertShaderModule;
+	vertShaderInfo.pName = "main";
+
+	// create fragment pipeline stage
+	VkPipelineShaderStageCreateInfo fragShaderInfo{};
+	fragShaderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	fragShaderInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	fragShaderInfo.module = fragShaderModule;
+	fragShaderInfo.pName = "main";
+
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderInfo, fragShaderInfo };
+
+	// free shader modules
+	vkDestroyShaderModule(device, fragShaderModule, nullptr);
+	vkDestroyShaderModule(device, vertShaderModule, nullptr);
 }
 
 
