@@ -373,3 +373,42 @@ VkExtent2D Utils::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities)
 	return extent;
 }
 
+std::vector<char> Utils::readFile(const std::string &fileName) {
+	// read file starting AT the End (std::ios::ate) in binary (std::ios::binary) format
+	std::ifstream file(fileName, std::ios::ate | std::ios::binary);
+
+	if (!file.is_open()) {
+		throw std::runtime_error("Failed to open file");
+	}
+
+	// benefit of starting at the end is that the current position
+	// of the `seek` indicates how large the file is
+	size_t fileSize = static_cast<size_t>(file.tellg());
+	std::vector<char> buffer(fileSize);
+
+	// start at beginning and read
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+
+	// close file and return bytes
+	file.close();
+	return buffer;
+}
+
+VkShaderModule Utils::createShaderModule(const VkDevice &device, const std::vector<char>& code) {
+	VkShaderModuleCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+
+	createInfo.codeSize = code.size();
+	createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+
+	VkShaderModule shader;
+
+	// create shader module
+	if (vkCreateShaderModule(device, &createInfo, nullptr, &shader) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create the shader module!");
+	}
+
+	return shader;
+}
+

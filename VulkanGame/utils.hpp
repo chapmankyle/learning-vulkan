@@ -8,6 +8,7 @@
 
 #include <algorithm> // for std::min() and std::max()
 #include <cstdint>   // for UINT32_MAX
+#include <fstream>
 #include <iostream>
 #include <optional>
 #include <set>
@@ -185,6 +186,20 @@ public:
 	 * @returns The resolution that the swap chain images will be rendered in.
 	 */
 	static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+
+	/*
+	 * @brief Reads the contents of a file and returns the bytes as characters.
+	 * @param fileName The name of the file to read.
+	 * @returns The contents of the file.
+	 */
+	static std::vector<char> readFile(const std::string &fileName);
+
+	/*
+	 * @brief Creates a shader module from the SPIR-V bytecode.
+	 * @param code The bytecode to wrap.
+	 * @return A shader module.
+	 */
+	static VkShaderModule createShaderModule(const VkDevice &device, const std::vector<char> &code);
 
 };
 
