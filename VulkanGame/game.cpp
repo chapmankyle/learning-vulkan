@@ -334,6 +334,11 @@ void Game::createImageViews() {
 }
 
 
+void Game::createGraphicsPipeline() {
+
+}
+
+
 void Game::initVulkan() {
 	// create the Vulkan instance
 	createInstance();
@@ -353,6 +358,9 @@ void Game::initVulkan() {
 	// create the swap chain
 	createSwapchain();
 	createImageViews();
+
+	// create customizable graphics pipeline
+	createGraphicsPipeline();
 }
 
 void Game::main() {

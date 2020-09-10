@@ -99,6 +99,11 @@ private:
 	void createImageViews();
 
 	/*
+	 * @brief Creates the graphics pipeline.
+	 */
+	void createGraphicsPipeline();
+
+	/*
 	 * @brief Sets up the necessary background checks to create a Vulkan instance.
 	*/
 	void initVulkan();
