@@ -364,6 +364,57 @@ void Game::createGraphicsPipeline() {
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderInfo, fragShaderInfo };
 
+	// vertex input pipeline stage
+	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInputInfo.vertexBindingDescriptionCount = 0;
+	vertexInputInfo.pVertexBindingDescriptions = nullptr;
+	vertexInputInfo.vertexAttributeDescriptionCount = 0;
+	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+
+	// create input assembly stage
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+	// viewport describes region of framebuffer that output will render to
+	VkViewport viewport{};
+	viewport.x = 0.0f;
+	viewport.y = 0.0f;
+	viewport.width = static_cast<float>(swapchainExtent.width);
+	viewport.height = static_cast<float>(swapchainExtent.height);
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	// scissor rectangle defines region in which pixels will be stored
+	VkRect2D scissor{};
+	scissor.offset = { 0, 0 };
+	scissor.extent = swapchainExtent;
+
+	// viewport state info
+	VkPipelineViewportStateCreateInfo viewportState{};
+	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportState.viewportCount = 1;
+	viewportState.pViewports = &viewport; // possible to have many viewports
+	viewportState.scissorCount = 1;
+	viewportState.pScissors = &scissor;
+
+	// create rasterizer
+	VkPipelineRasterizationStateCreateInfo rasterizer{};
+	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rasterizer.depthClampEnable = VK_FALSE;
+	rasterizer.rasterizerDiscardEnable = VK_FALSE; // if set to VK_TRUE, disables output to framebuffer
+	rasterizer.polygonMode = VK_POLYGON_MODE_FILL; // FILL indicates to fill area of polygons with fragments
+	rasterizer.lineWidth = 1.0f; // describes thickness of lines in terms of number of fragments
+	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT; // type of face culling to use
+	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE; // vertex order for faces to be considered
+
+	rasterizer.depthBiasEnable = VK_FALSE; // useful for shadown mapping
+	rasterizer.depthBiasConstantFactor = 0.0f;
+	rasterizer.depthBiasClamp = 0.0f;
+	rasterizer.depthBiasSlopeFactor = 0.0f;
+
 	// free shader modules
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
