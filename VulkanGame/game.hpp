@@ -57,6 +57,9 @@ private:
 	// image views from the swapchain
 	std::vector<VkImageView> swapchainImageViews;
 
+	// pipeline layout
+	VkPipelineLayout pipelineLayout;
+
 	/*
 	 * @brief Initializes a window.
 	 */
