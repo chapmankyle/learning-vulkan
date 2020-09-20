@@ -601,6 +601,21 @@ void Game::createFramebuffers() {
 }
 
 
+void Game::createCommandPool() {
+	Utils::QueueFamilyIndices queueFamilyIndices{ Utils::findQueueFamilies(physicalDevice, surface) };
+
+	// create command pool
+	VkCommandPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+	poolInfo.flags = 0;
+
+	if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create command pool!");
+	}
+}
+
+
 void Game::initVulkan() {
 	// create the Vulkan instance
 	createInstance();
@@ -629,6 +644,9 @@ void Game::initVulkan() {
 
 	// framebuffers for images in swap chain
 	createFramebuffers();
+
+	// creates the command pool for command buffers
+	createCommandPool();
 }
 
 
@@ -645,6 +663,9 @@ void Game::main() {
 
 
 void Game::cleanup() {
+	// destroys the command pool
+	vkDestroyCommandPool(device, commandPool, nullptr);
+
 	// destroy framebuffers
 	for (auto framebuffer : swapchainFramebuffers) {
 		vkDestroyFramebuffer(device, framebuffer, nullptr);

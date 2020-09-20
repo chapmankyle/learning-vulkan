@@ -67,6 +67,9 @@ private:
 	// final pipeline
 	VkPipeline graphicsPipeline;
 
+	// command pool manages memory used to store buffers
+	VkCommandPool commandPool;
+
 	/*
 	 * @brief Initializes a window.
 	 */
@@ -126,6 +129,12 @@ private:
 	 * time.
 	 */
 	void createFramebuffers();
+
+	/*
+	 * @brief Creates the command pool to manage the memory used to store buffers and
+	 * command buffers that are allocated from them.
+	 */
+	void createCommandPool();
 
 	/*
 	 * @brief Sets up the necessary background checks to create a Vulkan instance.
