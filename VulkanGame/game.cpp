@@ -334,6 +334,51 @@ void Game::createImageViews() {
 }
 
 
+void Game::createRenderPass() {
+	// single colour buffer attachment
+	VkAttachmentDescription colourAttachment{};
+	colourAttachment.format = swapchainImageFormat;
+	colourAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+
+	// determine what to do with data in attachment before and after rendering
+	colourAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; // clear values at start
+	colourAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // rendered constants will be stored in memory
+
+	// apply colour and depth data
+	colourAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colourAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+	// decide on layout of images being rendered
+	colourAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	colourAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR; // images to be presented in swap chain
+
+	// attachment reference for colours
+	VkAttachmentReference colourAttachmentRef{};
+	colourAttachmentRef.attachment = 0;
+	colourAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	// create the subpass
+	VkSubpassDescription subpass{};
+	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+	// add colour attachment to subpass
+	subpass.colorAttachmentCount = 1;
+	subpass.pColorAttachments = &colourAttachmentRef;
+
+	// describe render pass
+	VkRenderPassCreateInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	renderPassInfo.attachmentCount = 1;
+	renderPassInfo.pAttachments = &colourAttachment;
+	renderPassInfo.subpassCount = 1;
+	renderPassInfo.pSubpasses = &subpass;
+
+	if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create render pass!");
+	}
+}
+
+
 void Game::createGraphicsPipeline() {
 	// get bytecode of shaders
 	std::vector<char> vertShaderCode{ Utils::readFile("shaders/vert.spv") };
@@ -362,7 +407,7 @@ void Game::createGraphicsPipeline() {
 	fragShaderInfo.module = fragShaderModule;
 	fragShaderInfo.pName = "main";
 
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderInfo, fragShaderInfo };
+	VkPipelineShaderStageCreateInfo shaderStages[]{ vertShaderInfo, fragShaderInfo };
 
 	// vertex input pipeline stage
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
@@ -476,7 +521,7 @@ void Game::createGraphicsPipeline() {
 	dynamicState.dynamicStateCount = 2;
 	dynamicState.pDynamicStates = dynamicStates;
 
-	// create pipeline
+	// create pipeline layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutInfo.setLayoutCount = 0;
@@ -486,7 +531,42 @@ void Game::createGraphicsPipeline() {
 
 	// create pipeline layout
 	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+		vkDestroyShaderModule(device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(device, vertShaderModule, nullptr);
 		throw std::runtime_error("Failed to create pipeline layout!");
+	}
+
+	// graphics pipeline
+	VkGraphicsPipelineCreateInfo pipelineInfo{};
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.stageCount = 2;
+	pipelineInfo.pStages = shaderStages;
+
+	// add in the pipeline stages
+	pipelineInfo.pVertexInputState = &vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &inputAssembly;
+	pipelineInfo.pViewportState = &viewportState;
+	pipelineInfo.pRasterizationState = &rasterizer;
+	pipelineInfo.pMultisampleState = &multisampling;
+	pipelineInfo.pDepthStencilState = nullptr;
+	pipelineInfo.pColorBlendState = &colorBlending;
+	pipelineInfo.pDynamicState = nullptr;
+
+	// add fixed function stage to pipeline
+	pipelineInfo.layout = pipelineLayout;
+
+	// add render pass and subpass
+	pipelineInfo.renderPass = renderPass;
+	pipelineInfo.subpass = 0; // index of subpass
+
+	// can create a pipeline from an existing pipeline, but we don't have an existing one yet
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+	pipelineInfo.basePipelineIndex = -1;
+
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
+		vkDestroyShaderModule(device, fragShaderModule, nullptr);
+		vkDestroyShaderModule(device, vertShaderModule, nullptr);
+		throw std::runtime_error("Failed to create graphics pipeline!");
 	}
 
 	// free shader modules
@@ -515,6 +595,9 @@ void Game::initVulkan() {
 	createSwapchain();
 	createImageViews();
 
+	// create render pass
+	createRenderPass();
+
 	// create customizable graphics pipeline
 	createGraphicsPipeline();
 }
@@ -524,11 +607,21 @@ void Game::main() {
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 	}
+
+	// drawing calls are asynchronous, so we wait
+	// before cleaning up
+	vkDeviceWaitIdle(device);
 }
 
 void Game::cleanup() {
 	// destroy pipeline
+	vkDestroyPipeline(device, graphicsPipeline, nullptr);
+
+	// destroy pipeline layout
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+
+	// destroy render pass
+	vkDestroyRenderPass(device, renderPass, nullptr);
 
 	// destroy image views
 	for (auto imageView : swapchainImageViews) {

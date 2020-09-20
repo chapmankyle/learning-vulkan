@@ -57,8 +57,14 @@ private:
 	// image views from the swapchain
 	std::vector<VkImageView> swapchainImageViews;
 
+	// render pass for pipeline
+	VkRenderPass renderPass;
+
 	// pipeline layout
 	VkPipelineLayout pipelineLayout;
+
+	// final pipeline
+	VkPipeline graphicsPipeline;
 
 	/*
 	 * @brief Initializes a window.
@@ -100,6 +106,12 @@ private:
 	 * @brief Creates the image views for the swapchain.
 	 */
 	void createImageViews();
+
+	/*
+	 * @brief Creates a render pass that specifies information about the framebuffer
+	 * attachments and how many colour and depth buffers there will be.
+	 */
+	void createRenderPass();
 
 	/*
 	 * @brief Creates the graphics pipeline.
