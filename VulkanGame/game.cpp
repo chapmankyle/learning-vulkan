@@ -563,6 +563,7 @@ void Game::createGraphicsPipeline() {
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 	pipelineInfo.basePipelineIndex = -1;
 
+	// attempt to create graphics pipeline
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		vkDestroyShaderModule(device, fragShaderModule, nullptr);
 		vkDestroyShaderModule(device, vertShaderModule, nullptr);
@@ -572,6 +573,31 @@ void Game::createGraphicsPipeline() {
 	// free shader modules
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
+}
+
+
+void Game::createFramebuffers() {
+	// hold all image views
+	swapchainFramebuffers.resize(swapchainImageViews.size());
+
+	// create framebuffer for each image view
+	for (size_t i{ 0 }; i < swapchainImageViews.size(); i++) {
+		VkImageView attachments[]{ swapchainImageViews[i] };
+
+		// create framebuffer
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = renderPass;
+		framebufferInfo.attachmentCount = 1;
+		framebufferInfo.pAttachments = attachments;
+		framebufferInfo.width = swapchainExtent.width;
+		framebufferInfo.height = swapchainExtent.height;
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapchainFramebuffers[i]) != VK_SUCCESS) {
+			throw std::runtime_error("Failed to create framebuffer!");
+		}
+	}
 }
 
 
@@ -600,7 +626,11 @@ void Game::initVulkan() {
 
 	// create customizable graphics pipeline
 	createGraphicsPipeline();
+
+	// framebuffers for images in swap chain
+	createFramebuffers();
 }
+
 
 void Game::main() {
 	// keep pulling from event queue until window is closed
@@ -613,7 +643,13 @@ void Game::main() {
 	vkDeviceWaitIdle(device);
 }
 
+
 void Game::cleanup() {
+	// destroy framebuffers
+	for (auto framebuffer : swapchainFramebuffers) {
+		vkDestroyFramebuffer(device, framebuffer, nullptr);
+	}
+
 	// destroy pipeline
 	vkDestroyPipeline(device, graphicsPipeline, nullptr);
 
@@ -651,4 +687,3 @@ void Game::cleanup() {
 	// close up all processes
 	glfwTerminate();
 }
-

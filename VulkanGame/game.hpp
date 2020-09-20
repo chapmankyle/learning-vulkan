@@ -54,8 +54,9 @@ private:
 	VkFormat swapchainImageFormat;
 	VkExtent2D swapchainExtent;
 
-	// image views from the swapchain
+	// image views from the swapchain and their framebuffers
 	std::vector<VkImageView> swapchainImageViews;
+	std::vector<VkFramebuffer> swapchainFramebuffers;
 
 	// render pass for pipeline
 	VkRenderPass renderPass;
@@ -117,6 +118,14 @@ private:
 	 * @brief Creates the graphics pipeline.
 	 */
 	void createGraphicsPipeline();
+
+	/*
+	 * @brief Creates the framebuffers that will be used for rendering the
+	 * swapchain images. We have to create a framebuffer for each image in the
+	 * swapchain and use the one that corresponds to the retrieved image at draw
+	 * time.
+	 */
+	void createFramebuffers();
 
 	/*
 	 * @brief Sets up the necessary background checks to create a Vulkan instance.
