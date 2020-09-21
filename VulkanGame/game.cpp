@@ -692,14 +692,27 @@ void Game::createCommandBuffers() {
 }
 
 
-void Game::createSemaphores() {
+void Game::createSyncObjects() {
+	imageAvailableSemaphores.resize(constants::maxFramesInFlight);
+	renderFinishedSemaphores.resize(constants::maxFramesInFlight);
+
+	inFlightFences.resize(constants::maxFramesInFlight);
+	imagesInFlight.resize(swapchainImages.size(), VK_NULL_HANDLE);
+
 	VkSemaphoreCreateInfo semaphoreInfo{};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-	if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
-		vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS
-	) {
-		throw std::runtime_error("Failed to create semaphores!");
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	for (size_t i{ 0 }; i < constants::maxFramesInFlight; i++) {
+		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+			vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+			vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i]) != VK_SUCCESS
+		) {
+			throw std::runtime_error("Failed to create semaphores!");
+		}
 	}
 }
 
@@ -738,21 +751,31 @@ void Game::initVulkan() {
 	createCommandBuffers();
 
 	// semaphores for synchronization
-	createSemaphores();
+	createSyncObjects();
 }
 
 
 void Game::drawFrame() {
+	vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+
 	uint32_t imageIdx;
 
 	// acquire image from swapchain
-	vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIdx);
+	vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIdx);
+
+	// check if previous frame is using image
+	if (imagesInFlight[imageIdx] != VK_NULL_HANDLE) {
+		vkWaitForFences(device, 1, &imagesInFlight[imageIdx], VK_TRUE, UINT64_MAX);
+	}
+
+	// mark image as being in use
+	imagesInFlight[imageIdx] = inFlightFences[currentFrame];
 
 	// submit info
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[]{ imageAvailableSemaphore };
+	VkSemaphore waitSemaphores[]{ imageAvailableSemaphores[currentFrame] };
 	VkPipelineStageFlags waitStages[]{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
 	submitInfo.waitSemaphoreCount = 1;
@@ -763,12 +786,15 @@ void Game::drawFrame() {
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffers[imageIdx];
 
-	VkSemaphore signalSemaphores[]{ renderFinishedSemaphore };
+	VkSemaphore signalSemaphores[]{ renderFinishedSemaphores[currentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
+	// reset the fences
+	vkResetFences(device, 1, &inFlightFences[currentFrame]);
+
 	// submit to queue
-	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to submit draw command buffer!");
 	}
 
@@ -788,6 +814,9 @@ void Game::drawFrame() {
 
 	// present queue
 	vkQueuePresentKHR(presentQueue, &presentInfo);
+
+	// get current frame
+	currentFrame = (currentFrame + 1) % constants::maxFramesInFlight;
 }
 
 
@@ -806,8 +835,11 @@ void Game::main() {
 
 void Game::cleanup() {
 	// destroy semaphores
-	vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-	vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+	for (size_t i{ 0 }; i < constants::maxFramesInFlight; i++) {
+		vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+		vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+		vkDestroyFence(device, inFlightFences[i], nullptr);
+	}
 
 	// destroys the command pool
 	vkDestroyCommandPool(device, commandPool, nullptr);

@@ -74,8 +74,14 @@ private:
 	std::vector<VkCommandBuffer> commandBuffers;
 
 	// semaphores
-	VkSemaphore imageAvailableSemaphore;
-	VkSemaphore renderFinishedSemaphore;
+	std::vector<VkSemaphore> imageAvailableSemaphores;
+	std::vector<VkSemaphore> renderFinishedSemaphores;
+
+	// fences
+	std::vector<VkFence> inFlightFences;
+	std::vector<VkFence> imagesInFlight;
+
+	size_t currentFrame = 0;
 
 	/*
 	 * @brief Initializes a window.
@@ -151,7 +157,7 @@ private:
 	/*
 	 * @brief Create the semaphores used for synchronization of frame drawing.
 	 */
-	void createSemaphores();
+	void createSyncObjects();
 
 	/*
 	 * @brief Sets up the necessary background checks to create a Vulkan instance.
