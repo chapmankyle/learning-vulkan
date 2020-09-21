@@ -70,6 +70,13 @@ private:
 	// command pool manages memory used to store buffers
 	VkCommandPool commandPool;
 
+	// command buffers that use command pool
+	std::vector<VkCommandBuffer> commandBuffers;
+
+	// semaphores
+	VkSemaphore imageAvailableSemaphore;
+	VkSemaphore renderFinishedSemaphore;
+
 	/*
 	 * @brief Initializes a window.
 	 */
@@ -137,9 +144,27 @@ private:
 	void createCommandPool();
 
 	/*
+	 * @brief Create and allocate command buffers to record drawing commands to.
+	 */
+	void createCommandBuffers();
+
+	/*
+	 * @brief Create the semaphores used for synchronization of frame drawing.
+	 */
+	void createSemaphores();
+
+	/*
 	 * @brief Sets up the necessary background checks to create a Vulkan instance.
 	*/
 	void initVulkan();
+
+	/*
+	 * @brief Draws a frame to the screen.
+	 * - Aquires image from swapchain
+	 * - Executes command buffer with image as attachment in framebuffer
+	 * - Return image to swapchain for presentation
+	 */
+	void drawFrame();
 
 	/*
 	 * @brief Main game loop that keeps everything running.
