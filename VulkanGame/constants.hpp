@@ -16,6 +16,8 @@ namespace constants {
 	inline constexpr int width{ 1200 };
 	inline constexpr int height{ 900 };
 
+	inline constexpr int maxFramesInFlight{ 2 };
+
 	inline constexpr bool fullscreen{ false };
 
 	inline constexpr char title[]{ "Work In Progress: Game" };
