@@ -15,6 +15,11 @@ void Game::run() {
 // ---- PRIVATE ----
 // -----------------
 
+void Game::framebufferResizeCallback(GLFWwindow * window, int width, int height) {
+	auto app = reinterpret_cast<Game*>(glfwGetWindowUserPointer(window));
+	app->framebufferResized = true;
+}
+
 void Game::initWindow() {
 	// initialize components for GLFW
 	glfwInit();
@@ -22,11 +27,12 @@ void Game::initWindow() {
 	// indicate that we don't want OpenGL context
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-	// turn off resizable window
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
 	// create window
 	window = glfwCreateWindow(constants::width, constants::height, constants::title, nullptr, nullptr);
+
+	// tell GLFW that the current instance has the window
+	glfwSetWindowUserPointer(window, this);
+	glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
 }
 
 void Game::createInstance() {
@@ -693,7 +699,18 @@ void Game::createCommandBuffers() {
 
 
 void Game::recreateSwapchain() {
+	int width{ 0 };
+	int height{ 0 };
+
+	glfwGetFramebufferSize(window, &width, &height);
+	while (width == 0 || height == 0) {
+		glfwWaitEvents();
+		glfwGetFramebufferSize(window, &width, &height);
+	}
+
 	vkDeviceWaitIdle(device);
+
+	cleanupSwapchain();
 
 	createSwapchain();
 	createImageViews();
@@ -842,7 +859,8 @@ void Game::drawFrame() {
 	// present queue
 	result = vkQueuePresentKHR(presentQueue, &presentInfo);
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized) {
+		framebufferResized = false;
 		recreateSwapchain();
 	} else if (result != VK_SUCCESS) {
 		throw std::runtime_error("Failed to present swapchain images!");

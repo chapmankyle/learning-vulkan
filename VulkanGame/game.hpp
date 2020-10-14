@@ -83,6 +83,14 @@ private:
 
 	size_t currentFrame = 0;
 
+	// check for framebuffer being resized
+	bool framebufferResized = false;
+
+	/*
+	 * @brief Called when GLFW detects that the framebuffer has been resized.
+	 */
+	static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
+
 	/*
 	 * @brief Initializes a window.
 	 */
