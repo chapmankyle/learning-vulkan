@@ -155,6 +155,11 @@ private:
 	void createCommandBuffers();
 
 	/*
+	 * @brief Recreates the swapchain.
+	 */
+	void recreateSwapchain();
+
+	/*
 	 * @brief Create the semaphores used for synchronization of frame drawing.
 	 */
 	void createSyncObjects();
@@ -176,6 +181,11 @@ private:
 	 * @brief Main game loop that keeps everything running.
 	 */
 	void main();
+
+	/*
+	 * @brief Cleans up all components relating to the swapchain.
+	 */
+	void cleanupSwapchain();
 
 	/*
 	 * @brief Cleans up Vulkan and GLFW.

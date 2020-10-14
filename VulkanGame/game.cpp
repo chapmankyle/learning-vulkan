@@ -222,7 +222,7 @@ void Game::createSwapchain() {
 	// get surface formate, present mode and extent
 	VkSurfaceFormatKHR surfaceFormat{ Utils::chooseSwapSurfaceFormat(swapchainSupport.formats) };
 	VkPresentModeKHR presentMode{ Utils::chooseSwapPresentMode(swapchainSupport.presentModes) };
-	VkExtent2D extent{ Utils::chooseSwapExtent(swapchainSupport.capabilities) };
+	VkExtent2D extent{ Utils::chooseSwapExtent(window, swapchainSupport.capabilities) };
 
 	// choose number of images to have in swap chain
 	uint32_t imageCount{ swapchainSupport.capabilities.minImageCount + 1 };
@@ -692,6 +692,18 @@ void Game::createCommandBuffers() {
 }
 
 
+void Game::recreateSwapchain() {
+	vkDeviceWaitIdle(device);
+
+	createSwapchain();
+	createImageViews();
+	createRenderPass();
+	createGraphicsPipeline();
+	createFramebuffers();
+	createCommandBuffers();
+}
+
+
 void Game::createSyncObjects() {
 	imageAvailableSemaphores.resize(constants::maxFramesInFlight);
 	renderFinishedSemaphores.resize(constants::maxFramesInFlight);
@@ -761,7 +773,22 @@ void Game::drawFrame() {
 	uint32_t imageIdx;
 
 	// acquire image from swapchain
-	vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIdx);
+	VkResult result = vkAcquireNextImageKHR(
+		device,
+		swapChain,
+		UINT64_MAX,
+		imageAvailableSemaphores[currentFrame],
+		VK_NULL_HANDLE,
+		&imageIdx
+	);
+
+	// out-of-date swapchain, recreate
+	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		recreateSwapchain();
+		return;
+	} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+		throw std::runtime_error("Failed to acquire swapchain images!");
+	}
 
 	// check if previous frame is using image
 	if (imagesInFlight[imageIdx] != VK_NULL_HANDLE) {
@@ -813,7 +840,13 @@ void Game::drawFrame() {
 	presentInfo.pResults = nullptr;
 
 	// present queue
-	vkQueuePresentKHR(presentQueue, &presentInfo);
+	result = vkQueuePresentKHR(presentQueue, &presentInfo);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+		recreateSwapchain();
+	} else if (result != VK_SUCCESS) {
+		throw std::runtime_error("Failed to present swapchain images!");
+	}
 
 	// get current frame
 	currentFrame = (currentFrame + 1) % constants::maxFramesInFlight;
@@ -833,21 +866,14 @@ void Game::main() {
 }
 
 
-void Game::cleanup() {
-	// destroy semaphores
-	for (size_t i{ 0 }; i < constants::maxFramesInFlight; i++) {
-		vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
-		vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
-		vkDestroyFence(device, inFlightFences[i], nullptr);
-	}
-
-	// destroys the command pool
-	vkDestroyCommandPool(device, commandPool, nullptr);
-
+void Game::cleanupSwapchain() {
 	// destroy framebuffers
-	for (auto framebuffer : swapchainFramebuffers) {
-		vkDestroyFramebuffer(device, framebuffer, nullptr);
+	for (size_t i{ 0 }; i < swapchainFramebuffers.size(); i++) {
+		vkDestroyFramebuffer(device, swapchainFramebuffers[i], nullptr);
 	}
+
+	// free all command buffers
+	vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
 
 	// destroy pipeline
 	vkDestroyPipeline(device, graphicsPipeline, nullptr);
@@ -859,12 +885,27 @@ void Game::cleanup() {
 	vkDestroyRenderPass(device, renderPass, nullptr);
 
 	// destroy image views
-	for (auto imageView : swapchainImageViews) {
-		vkDestroyImageView(device, imageView, nullptr);
+	for (size_t i{ 0 }; i < swapchainImageViews.size(); i++) {
+		vkDestroyImageView(device, swapchainImageViews[i], nullptr);
 	}
 
 	// destroys the swap chain
 	vkDestroySwapchainKHR(device, swapChain, nullptr);
+}
+
+
+void Game::cleanup() {
+	cleanupSwapchain();
+
+	// destroy semaphores
+	for (size_t i{ 0 }; i < constants::maxFramesInFlight; i++) {
+		vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+		vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+		vkDestroyFence(device, inFlightFences[i], nullptr);
+	}
+
+	// destroys the command pool
+	vkDestroyCommandPool(device, commandPool, nullptr);
 
 	// destroy logical device
 	vkDestroyDevice(device, nullptr);
