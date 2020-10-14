@@ -357,13 +357,19 @@ VkPresentModeKHR Utils::chooseSwapPresentMode(const std::vector<VkPresentModeKHR
 }
 
 
-VkExtent2D Utils::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) {
+VkExtent2D Utils::chooseSwapExtent(GLFWwindow *window, const VkSurfaceCapabilitiesKHR &capabilities) {
 	if (capabilities.currentExtent.width != UINT32_MAX) {
 		return capabilities.currentExtent;
 	}
 
+	// stores actual width and height
+	int width{ 0 };
+	int height{ 0 };
+
+	glfwGetFramebufferSize(window, &width, &height);
+
 	// create extent with current window bounds
-	VkExtent2D extent{ constants::width, constants::height };
+	VkExtent2D extent{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 
 	// clamp values between allowed min and max extents
 	extent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, extent.width));

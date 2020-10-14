@@ -185,7 +185,7 @@ public:
 	 * @param capabilities The range of possible resolutions.
 	 * @returns The resolution that the swap chain images will be rendered in.
 	 */
-	static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+	static VkExtent2D chooseSwapExtent(GLFWwindow *window, const VkSurfaceCapabilitiesKHR &capabilities);
 
 	/*
 	 * @brief Reads the contents of a file and returns the bytes as characters.
