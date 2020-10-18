@@ -431,10 +431,14 @@ void Game::createGraphicsPipeline() {
 	// vertex input pipeline stage
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr;
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+
+	auto bindingDesc = Utils::Vertex::getBindingDescription();
+	auto attributeDesc = Utils::Vertex::getAttributeDescriptions();
+
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDesc;
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDesc.size());
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDesc.data();
 
 	// create input assembly stage
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
