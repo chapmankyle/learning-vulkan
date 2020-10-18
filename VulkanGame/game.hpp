@@ -70,6 +70,10 @@ private:
 	// command pool manages memory used to store buffers
 	VkCommandPool commandPool;
 
+	// vertex buffer for vertex information
+	VkBuffer vertexBuffer;
+	VkDeviceMemory vertexBufferMemory;
+
 	// command buffers that use command pool
 	std::vector<VkCommandBuffer> commandBuffers;
 
@@ -162,6 +166,12 @@ private:
 	 * command buffers that are allocated from them.
 	 */
 	void createCommandPool();
+
+	/**
+	 * @brief Creates a vertex buffer to allow GPU to use vertex data specified in
+	 * the program.
+	 */
+	void createVertexBuffer();
 
 	/*
 	 * @brief Create and allocate command buffers to record drawing commands to.

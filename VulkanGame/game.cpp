@@ -639,6 +639,50 @@ void Game::createCommandPool() {
 }
 
 
+void Game::createVertexBuffer() {
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+
+	bufferInfo.size = sizeof(vertices[0]) * vertices.size();
+	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	// create buffer
+	if (vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create vertex buffer!");
+	}
+
+	// memory requirements
+	VkMemoryRequirements memReqs;
+	vkGetBufferMemoryRequirements(device, vertexBuffer, &memReqs);
+
+	// setup allocation of memory
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+
+	allocInfo.allocationSize = memReqs.size;
+	allocInfo.memoryTypeIndex = Utils::findMemoryType(
+		physicalDevice,
+		memReqs.memoryTypeBits,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+	);
+
+	// allocate memory
+	if (vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to allocate vertex buffer memory!");
+	}
+
+	// bind memory if allocation was successful
+	vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+
+	// map buffer memory into CPU-accessible memory
+	void *data;
+	vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+	memcpy(data, vertices.data(), static_cast<size_t>(bufferInfo.size));
+	vkUnmapMemory(device, vertexBufferMemory);
+}
+
+
 void Game::createCommandBuffers() {
 	// create a command buffer for each framebuffer in swapchain
 	commandBuffers.resize(swapchainFramebuffers.size());
@@ -687,6 +731,11 @@ void Game::createCommandBuffers() {
 
 		// bind graphics pipeline
 		vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+		// specify vertex buffers
+		VkBuffer vertexBuffers[]{ vertexBuffer };
+		VkDeviceSize offsets[]{ 0 };
+		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 
 		// draw
 		// (vertexCount, instanceCount, firstVertex, firstInstance)
@@ -781,6 +830,9 @@ void Game::initVulkan() {
 
 	// creates the command pool for command buffers
 	createCommandPool();
+
+	// create buffers
+	createVertexBuffer();
 	createCommandBuffers();
 
 	// semaphores for synchronization
@@ -918,6 +970,10 @@ void Game::cleanupSwapchain() {
 
 void Game::cleanup() {
 	cleanupSwapchain();
+
+	// destroy vertex buffer
+	vkDestroyBuffer(device, vertexBuffer, nullptr);
+	vkFreeMemory(device, vertexBufferMemory, nullptr);
 
 	// destroy semaphores
 	for (size_t i{ 0 }; i < constants::maxFramesInFlight; i++) {
