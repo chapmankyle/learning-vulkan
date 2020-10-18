@@ -255,7 +255,14 @@ public:
 	 */
 	static VkShaderModule createShaderModule(const VkDevice &device, const std::vector<char> &code);
 
+	/**
+	 * @brief Finds the type of memory that is compatible with our application requirements.
+	 * @param device The physical device to get memory properties of.
+	 * @param typeFilter The bit field of memory types that are suitable.
+	 * @param props The flags for the memory properties.
+	 */
+	static uint32_t findMemoryType(const VkPhysicalDevice &device, uint32_t typeFilter, VkMemoryPropertyFlags props);
+
 };
 
 #endif // UTILS_HPP
-

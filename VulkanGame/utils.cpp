@@ -21,6 +21,7 @@ std::vector<VkExtensionProperties> Utils::getAvailableExtensions() {
 	return available;
 }
 
+
 std::vector<const char*> Utils::getRequiredExtensions() {
 	uint32_t numExtensions{ 0 };
 
@@ -35,6 +36,7 @@ std::vector<const char*> Utils::getRequiredExtensions() {
 
 	return required;
 }
+
 
 bool Utils::hasRequiredExtensions(
 	const std::vector<const char *> &required,
@@ -60,6 +62,7 @@ bool Utils::hasRequiredExtensions(
 
 	return true;
 }
+
 
 bool Utils::hasValidationLayerSupport() {
 	uint32_t numLayers{ 0 };
@@ -96,6 +99,7 @@ bool Utils::hasValidationLayerSupport() {
 	return true;
 }
 
+
 VKAPI_ATTR VkBool32 VKAPI_CALL Utils::debugCallback(
 	VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -107,6 +111,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Utils::debugCallback(
 
 	return VK_FALSE;
 }
+
 
 void Utils::fillDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
 	createInfo = {};
@@ -125,6 +130,7 @@ void Utils::fillDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &cre
 	createInfo.pUserData = nullptr;
 }
 
+
 VkResult Utils::createDebugUtilsMessenger(
 	VkInstance instance,
 	const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
@@ -141,6 +147,7 @@ VkResult Utils::createDebugUtilsMessenger(
 	return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
+
 void Utils::destroyDebugUtilsMessenger(
 	VkInstance instance,
 	VkDebugUtilsMessengerEXT debugMessenger,
@@ -153,6 +160,7 @@ void Utils::destroyDebugUtilsMessenger(
 		func(instance, debugMessenger, pAllocator);
 	}
 }
+
 
 void Utils::showDeviceProperties(const VkPhysicalDeviceProperties &deviceProps) {
 	const char *devType;
@@ -184,6 +192,7 @@ void Utils::showDeviceProperties(const VkPhysicalDeviceProperties &deviceProps) 
 	std::cout << "\tMaximum number of viewports: " << deviceProps.limits.maxViewports << '\n';
 }
 
+
 void Utils::showDeviceProperties(const VkPhysicalDevice &device) {
 	// get properties of device
 	VkPhysicalDeviceProperties deviceProps;
@@ -191,6 +200,7 @@ void Utils::showDeviceProperties(const VkPhysicalDevice &device) {
 
 	showDeviceProperties(deviceProps);
 }
+
 
 Utils::QueueFamilyIndices Utils::findQueueFamilies(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
 	Utils::QueueFamilyIndices indices;
@@ -229,6 +239,7 @@ Utils::QueueFamilyIndices Utils::findQueueFamilies(const VkPhysicalDevice &devic
 	return indices;
 }
 
+
 bool Utils::hasDeviceExtensionSupport(const VkPhysicalDevice &device) {
 	// query device extension properties
 	uint32_t numExtensions{ 0 };
@@ -248,6 +259,7 @@ bool Utils::hasDeviceExtensionSupport(const VkPhysicalDevice &device) {
 	// empty if all extensions were found and removed
 	return required.empty();
 }
+
 
 int Utils::getDeviceScore(const VkPhysicalDevice &device, const VkSurfaceKHR &surface) {
 	// device properties (name, type, supported Vulkan version etc.)
@@ -301,6 +313,7 @@ int Utils::getDeviceScore(const VkPhysicalDevice &device, const VkSurfaceKHR &su
 
 	return score;
 }
+
 
 Utils::SwapChainSupportDetails Utils::querySwapChainSupport(
 	const VkPhysicalDevice &device,
@@ -378,6 +391,7 @@ VkExtent2D Utils::chooseSwapExtent(GLFWwindow *window, const VkSurfaceCapabiliti
 	return extent;
 }
 
+
 std::vector<char> Utils::readFile(const std::string &fileName) {
 	// read file starting AT the End (std::ios::ate) in binary (std::ios::binary) format
 	std::ifstream file(fileName, std::ios::ate | std::ios::binary);
@@ -400,6 +414,7 @@ std::vector<char> Utils::readFile(const std::string &fileName) {
 	return buffer;
 }
 
+
 VkShaderModule Utils::createShaderModule(const VkDevice &device, const std::vector<char>& code) {
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -417,3 +432,16 @@ VkShaderModule Utils::createShaderModule(const VkDevice &device, const std::vect
 	return shader;
 }
 
+
+uint32_t Utils::findMemoryType(const VkPhysicalDevice &device, uint32_t typeFilter, VkMemoryPropertyFlags props) {
+	VkPhysicalDeviceMemoryProperties memProps;
+	vkGetPhysicalDeviceMemoryProperties(device, &memProps);
+
+	for (uint32_t i{ 0 }; i < memProps.memoryTypeCount; i++) {
+		if ((typeFilter & (1 << i)) && (memProps.memoryTypes[i].propertyFlags & props) == props) {
+			return i;
+		}
+	}
+
+	throw std::runtime_error("Failed to find suitable memory type!");
+}
