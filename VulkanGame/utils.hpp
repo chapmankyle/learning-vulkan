@@ -6,6 +6,9 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+
+#include <array>
 #include <algorithm> // for std::min() and std::max()
 #include <cstdint>   // for UINT32_MAX
 #include <fstream>
@@ -36,6 +39,57 @@ public:
 		VkSurfaceCapabilitiesKHR capabilities;
 		std::vector<VkSurfaceFormatKHR> formats;
 		std::vector<VkPresentModeKHR> presentModes;
+	};
+
+	/**
+	 * @brief Structure to store vertex information.
+	 */
+	struct Vertex {
+		glm::vec2 pos;
+		glm::vec3 colour;
+
+		/**
+		 * @returns The rate at which to load data from memory throughout
+		 * the vertices. Specifies number of bytes between data entries and
+		 * whether to move to next data entry after each vertext or after
+		 * each instance.
+		 */
+		static VkVertexInputBindingDescription getBindingDescription() {
+			VkVertexInputBindingDescription bindingDesc{};
+
+			bindingDesc.binding = 0; // index of binding in array of bindings
+			bindingDesc.stride = sizeof(Vertex); // number of bytes from one entry to another
+			bindingDesc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX; // move to next data entry after each vertex
+
+			return bindingDesc;
+		}
+
+		/**
+		 * @returns How to extract a vertex attribute from a chunk of vertex data originating from
+		 * a binding description.
+		 */
+		static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
+			std::array<VkVertexInputAttributeDescription, 2> attributeDesc{};
+
+			// position
+			// - format:
+			//   * float: VK_FORMAT_R32_SFLOAT
+			//   * vec2:  VK_FORMAT_R32G32_SFLOAT
+			//   * vec3:  VK_FORMAT_R32G32B32_SFLOAT
+			//   * vec4:  VK_FORMAT_R32G32B32A32_SFLOAT
+			attributeDesc[0].binding = 0;
+			attributeDesc[0].location = 0;
+			attributeDesc[0].format = VK_FORMAT_R32G32_SFLOAT;
+			attributeDesc[0].offset = offsetof(Vertex, pos);
+
+			// colour
+			attributeDesc[1].binding = 0;
+			attributeDesc[1].location = 1;
+			attributeDesc[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+			attributeDesc[1].offset = offsetof(Vertex, colour);
+
+			return attributeDesc;
+		}
 	};
 
 	/*
