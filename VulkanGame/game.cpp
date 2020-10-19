@@ -639,22 +639,28 @@ void Game::createCommandPool() {
 }
 
 
-void Game::createVertexBuffer() {
+void Game::createBuffer(
+	VkDeviceSize size,
+	VkBufferUsageFlags usage,
+	VkMemoryPropertyFlags properties,
+	VkBuffer &buffer,
+	VkDeviceMemory &bufferMemory
+) {
 	VkBufferCreateInfo bufferInfo{};
 	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 
-	bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.size = size;
+	bufferInfo.usage = usage;
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	// create buffer
-	if (vkCreateBuffer(device, &bufferInfo, nullptr, &vertexBuffer) != VK_SUCCESS) {
+	if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create vertex buffer!");
 	}
 
 	// memory requirements
 	VkMemoryRequirements memReqs;
-	vkGetBufferMemoryRequirements(device, vertexBuffer, &memReqs);
+	vkGetBufferMemoryRequirements(device, buffer, &memReqs);
 
 	// setup allocation of memory
 	VkMemoryAllocateInfo allocInfo{};
@@ -664,21 +670,33 @@ void Game::createVertexBuffer() {
 	allocInfo.memoryTypeIndex = Utils::findMemoryType(
 		physicalDevice,
 		memReqs.memoryTypeBits,
-		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+		properties
 	);
 
 	// allocate memory
-	if (vkAllocateMemory(device, &allocInfo, nullptr, &vertexBufferMemory) != VK_SUCCESS) {
+	if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to allocate vertex buffer memory!");
 	}
 
 	// bind memory if allocation was successful
-	vkBindBufferMemory(device, vertexBuffer, vertexBufferMemory, 0);
+	vkBindBufferMemory(device, buffer, bufferMemory, 0);
+}
+
+
+void Game::createVertexBuffer() {
+	VkDeviceSize bufferSize{ sizeof(vertices[0]) * vertices.size() };
+	createBuffer(
+		bufferSize,
+		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		vertexBuffer,
+		vertexBufferMemory
+	);
 
 	// map buffer memory into CPU-accessible memory
 	void *data;
-	vkMapMemory(device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-	memcpy(data, vertices.data(), static_cast<size_t>(bufferInfo.size));
+	vkMapMemory(device, vertexBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
 	vkUnmapMemory(device, vertexBufferMemory);
 }
 

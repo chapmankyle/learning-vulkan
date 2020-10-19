@@ -169,6 +169,17 @@ private:
 	void createCommandPool();
 
 	/**
+	 * @brief Creates a buffer.
+	 */
+	void createBuffer(
+		VkDeviceSize size,
+		VkBufferUsageFlags usage,
+		VkMemoryPropertyFlags properties,
+		VkBuffer &buffer,
+		VkDeviceMemory &bufferMemory
+	);
+
+	/**
 	 * @brief Creates a vertex buffer to allow GPU to use vertex data specified in
 	 * the program.
 	 */
