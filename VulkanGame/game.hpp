@@ -90,10 +90,11 @@ private:
 	// check for framebuffer being resized
 	bool framebufferResized = false;
 
+	// vertices to draw on the screen
 	const std::vector<Utils::Vertex> vertices = {
-		{{0.0f, -0.5f}, {1.0f, 0.0f, 1.0f}},
-		{{0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}},
-		{{-0.5f, 0.5f}, {1.0f, 1.0f, 0.0f}}
+		{{-0.3f, -0.45f}, {0.0f, 1.0f, 1.0f}},
+		{{0.3f, 0.0f}, {1.0f, 1.0f, 0.0f}},
+		{{-0.3f, 0.45f}, {1.0f, 0.0f, 1.0f}}
 	};
 
 	/*
