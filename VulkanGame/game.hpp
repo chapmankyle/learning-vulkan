@@ -74,6 +74,10 @@ private:
 	VkBuffer vertexBuffer;
 	VkDeviceMemory vertexBufferMemory;
 
+	// index buffer to avoid reuse of vertices
+	VkBuffer indexBuffer;
+	VkDeviceMemory indexBufferMemory;
+
 	// command buffers that use command pool
 	std::vector<VkCommandBuffer> commandBuffers;
 
@@ -92,9 +96,15 @@ private:
 
 	// vertices to draw on the screen
 	const std::vector<Utils::Vertex> vertices = {
-		{{-0.3f, -0.45f}, {0.0f, 1.0f, 1.0f}},
-		{{0.3f, 0.0f}, {1.0f, 1.0f, 0.0f}},
-		{{-0.3f, 0.45f}, {1.0f, 0.0f, 1.0f}}
+		{{0.0f, -0.8f}, {1.0f, 0.0f, 0.0f}},
+		{{0.5f, 0.7f}, {0.0f, 1.0f, 0.0f}},
+		{{0.0f, 0.2f}, {0.0f, 0.0f, 1.0f}},
+		{{-0.5f, 0.7f}, {1.0f, 1.0f, 1.0f}}
+	};
+
+	// indices for the vertices (using uint16_t because we have fewer than 65535 unique vertices)
+	const std::vector<uint16_t> vertexIndices = {
+		0, 1, 2, 2, 3, 0
 	};
 
 	/*
@@ -169,6 +179,11 @@ private:
 	void createCommandPool();
 
 	/**
+	 * @brief Copies the source buffer into the destination buffer.
+	 */
+	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
+	/**
 	 * @brief Creates a buffer.
 	 */
 	void createBuffer(
@@ -184,6 +199,11 @@ private:
 	 * the program.
 	 */
 	void createVertexBuffer();
+
+	/**
+	 * @brief Creates an index buffer to avoid reuse of vertices.
+	 */
+	void createIndexBuffer();
 
 	/*
 	 * @brief Create and allocate command buffers to record drawing commands to.
