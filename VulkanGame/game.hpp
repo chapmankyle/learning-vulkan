@@ -61,6 +61,9 @@ private:
 	// render pass for pipeline
 	VkRenderPass renderPass;
 
+	// layout for descriptor set
+	VkDescriptorSetLayout descSetLayout;
+
 	// pipeline layout
 	VkPipelineLayout pipelineLayout;
 
@@ -93,6 +96,13 @@ private:
 
 	// check for framebuffer being resized
 	bool framebufferResized = false;
+
+	// uses model-view-projection to allow vertices to change each frame, if necessary
+	struct UniformBufferObject {
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 proj;
+	};
 
 	// vertices to draw on the screen
 	const std::vector<Utils::Vertex> vertices = {
@@ -158,6 +168,12 @@ private:
 	 * attachments and how many colour and depth buffers there will be.
 	 */
 	void createRenderPass();
+
+	/*
+	 * @brief Creates the descriptor set layout that will allow the model to be 
+	 * manipulated by the user.
+	 */
+	void createDescriptorSetLayout();
 
 	/*
 	 * @brief Creates the graphics pipeline.
