@@ -572,8 +572,8 @@ void Game::createGraphicsPipeline() {
 	// create pipeline layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0;
-	pipelineLayoutInfo.pSetLayouts = nullptr;
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &descSetLayout;
 	pipelineLayoutInfo.pushConstantRangeCount = 0;
 	pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -1112,6 +1112,9 @@ void Game::cleanupSwapchain() {
 
 void Game::cleanup() {
 	cleanupSwapchain();
+
+	// destroy descriptor set layout
+	vkDestroyDescriptorSetLayout(device, descSetLayout, nullptr);
 
 	// destroy index buffer
 	vkDestroyBuffer(device, indexBuffer, nullptr);
