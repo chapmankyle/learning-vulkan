@@ -1004,6 +1004,32 @@ void Game::initVulkan() {
 }
 
 
+void Game::updateUniformBuffer(uint32_t currImg) {
+	// set starting time to static so it is calculated once
+	static auto startTime = std::chrono::steady_clock::now();
+
+	// get elapsed time
+	auto currTime = std::chrono::steady_clock::now();
+	float elapsed = std::chrono::duration<float, std::chrono::seconds::period>(currTime - startTime).count();
+
+	// update UBO
+	UniformBufferObject ubo{};
+
+	ubo.model = glm::rotate(glm::mat4(1.0f), elapsed * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), swapchainExtent.width / static_cast<float>(swapchainExtent.height), 0.1f, 10.0f);
+
+	// flip Y co-ordinates (so they show the model in the correct orientation)
+	ubo.proj[1][1] *= -1;
+
+	// copy data to memory
+	void *data;
+	vkMapMemory(device, uniformBuffersMemory[currImg], 0, sizeof(ubo), 0, &data);
+	memcpy(data, &ubo, sizeof(ubo));
+	vkUnmapMemory(device, uniformBuffersMemory[currImg]);
+}
+
+
 void Game::drawFrame() {
 	vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
@@ -1034,6 +1060,9 @@ void Game::drawFrame() {
 
 	// mark image as being in use
 	imagesInFlight[imageIdx] = inFlightFences[currentFrame];
+
+	// update UBOs
+	updateUniformBuffer(imageIdx);
 
 	// submit info
 	VkSubmitInfo submitInfo{};

@@ -6,14 +6,17 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "utils.hpp"
+#include "constants.hpp"
+
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <map>
 #include <set>
 #include <vector>
-
-#include "utils.hpp"
-#include "constants.hpp"
 
 class Game {
 public:
@@ -249,6 +252,11 @@ private:
 	 * @brief Sets up the necessary background checks to create a Vulkan instance.
 	*/
 	void initVulkan();
+
+	/*
+	 * @brief Updates the uniform buffer objects.
+	 */
+	void updateUniformBuffer(uint32_t currImg);
 
 	/*
 	 * @brief Draws a frame to the screen.
