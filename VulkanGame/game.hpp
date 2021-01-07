@@ -81,6 +81,10 @@ private:
 	VkBuffer indexBuffer;
 	VkDeviceMemory indexBufferMemory;
 
+	// uniform buffers
+	std::vector<VkBuffer> uniformBuffers;
+	std::vector<VkDeviceMemory> uniformBuffersMemory;
+
 	// command buffers that use command pool
 	std::vector<VkCommandBuffer> commandBuffers;
 
@@ -220,6 +224,11 @@ private:
 	 * @brief Creates an index buffer to avoid reuse of vertices.
 	 */
 	void createIndexBuffer();
+
+	/**
+	 * @brief Creates the uniform buffers and their associated memory.
+	 */
+	void createUniformBuffers();
 
 	/*
 	 * @brief Create and allocate command buffers to record drawing commands to.

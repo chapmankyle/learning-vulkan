@@ -820,6 +820,26 @@ void Game::createIndexBuffer() {
 }
 
 
+void Game::createUniformBuffers() {
+	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+	// resize vectors since we have per swapchain image
+	uniformBuffers.resize(swapchainImages.size());
+	uniformBuffersMemory.resize(swapchainImages.size());
+
+	// create each buffer
+	for (size_t i = 0; i < swapchainImages.size(); i++) {
+		createBuffer(
+			bufferSize,
+			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+			uniformBuffers[i],
+			uniformBuffersMemory[i]
+		);
+	}
+}
+
+
 void Game::createCommandBuffers() {
 	// create a command buffer for each framebuffer in swapchain
 	commandBuffers.resize(swapchainFramebuffers.size());
@@ -908,6 +928,7 @@ void Game::recreateSwapchain() {
 	createRenderPass();
 	createGraphicsPipeline();
 	createFramebuffers();
+	createUniformBuffers();
 	createCommandBuffers();
 }
 
@@ -975,6 +996,7 @@ void Game::initVulkan() {
 	// create buffers
 	createVertexBuffer();
 	createIndexBuffer();
+	createUniformBuffers();
 	createCommandBuffers();
 
 	// semaphores for synchronization
@@ -1107,6 +1129,12 @@ void Game::cleanupSwapchain() {
 
 	// destroys the swap chain
 	vkDestroySwapchainKHR(device, swapChain, nullptr);
+
+	// destroy uniform buffers
+	for (size_t i = 0; i < swapchainImages.size(); i++) {
+        vkDestroyBuffer(device, uniformBuffers[i], nullptr);
+        vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
+    }
 }
 
 
