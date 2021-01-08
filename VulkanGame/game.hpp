@@ -88,6 +88,9 @@ private:
 	std::vector<VkBuffer> uniformBuffers;
 	std::vector<VkDeviceMemory> uniformBuffersMemory;
 
+	// descriptor pool
+	VkDescriptorPool descPool;
+
 	// command buffers that use command pool
 	std::vector<VkCommandBuffer> commandBuffers;
 
@@ -232,6 +235,11 @@ private:
 	 * @brief Creates the uniform buffers and their associated memory.
 	 */
 	void createUniformBuffers();
+
+	/**
+	 * @brief Creates the descriptor pool for the descriptor sets.
+	 */
+	void createDescriptorPool();
 
 	/*
 	 * @brief Create and allocate command buffers to record drawing commands to.
