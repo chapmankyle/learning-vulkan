@@ -840,6 +840,27 @@ void Game::createUniformBuffers() {
 }
 
 
+void Game::createDescriptorPool() {
+	VkDescriptorPoolSize poolSize{};
+	poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSize.descriptorCount = static_cast<uint32_t>(swapchainImages.size());
+
+	// create pool
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = &poolSize;
+
+	// maximum number of descriptor sets to be allocated
+	poolInfo.maxSets = static_cast<uint32_t>(swapchainImages.size());
+
+	// attempt to create
+	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descPool) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create descriptor pool!");
+	}
+}
+
+
 void Game::createCommandBuffers() {
 	// create a command buffer for each framebuffer in swapchain
 	commandBuffers.resize(swapchainFramebuffers.size());
@@ -929,6 +950,7 @@ void Game::recreateSwapchain() {
 	createGraphicsPipeline();
 	createFramebuffers();
 	createUniformBuffers();
+	createDescriptorPool();
 	createCommandBuffers();
 }
 
@@ -997,6 +1019,7 @@ void Game::initVulkan() {
 	createVertexBuffer();
 	createIndexBuffer();
 	createUniformBuffers();
+	createDescriptorPool();
 	createCommandBuffers();
 
 	// semaphores for synchronization
@@ -1164,6 +1187,9 @@ void Game::cleanupSwapchain() {
         vkDestroyBuffer(device, uniformBuffers[i], nullptr);
         vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
     }
+
+	// destroy descriptor pool
+	vkDestroyDescriptorPool(device, descPool, nullptr);
 }
 
 
