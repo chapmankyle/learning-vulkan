@@ -501,7 +501,7 @@ void Game::createGraphicsPipeline() {
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL; // FILL indicates to fill area of polygons with fragments
 	rasterizer.lineWidth = 1.0f; // describes thickness of lines in terms of number of fragments
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT; // type of face culling to use
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE; // vertex order for faces to be considered
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE; // vertex order for faces to be considered
 
 	rasterizer.depthBiasEnable = VK_FALSE; // useful for shadown mapping
 	rasterizer.depthBiasConstantFactor = 0.0f;
@@ -861,6 +861,47 @@ void Game::createDescriptorPool() {
 }
 
 
+void Game::createDescriptorSets() {
+	std::vector<VkDescriptorSetLayout> layouts(swapchainImages.size(), descSetLayout);
+
+	// create allocation info
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = descPool;
+	allocInfo.descriptorSetCount = static_cast<uint32_t>(swapchainImages.size());
+	allocInfo.pSetLayouts = layouts.data();
+
+	// one descriptor set per swapchain image
+	descSets.resize(swapchainImages.size());
+	if (vkAllocateDescriptorSets(device, &allocInfo, descSets.data()) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to allocate descriptor sets!");
+	}
+
+	// populate each descriptor
+	for (size_t i = 0; i < swapchainImages.size(); i++) {
+		VkDescriptorBufferInfo bufferInfo{};
+		bufferInfo.buffer = uniformBuffers[i];
+		bufferInfo.offset = 0;
+		bufferInfo.range = sizeof(UniformBufferObject);
+
+		VkWriteDescriptorSet descWrite{};
+		descWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descWrite.dstSet = descSets[i];
+		descWrite.dstBinding = 0;
+		descWrite.dstArrayElement = 0;
+
+		descWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		descWrite.descriptorCount = 1; // how many array elements to update
+		
+		descWrite.pBufferInfo = &bufferInfo;
+		descWrite.pImageInfo = nullptr;
+		descWrite.pTexelBufferView = nullptr;
+
+		vkUpdateDescriptorSets(device, 1, &descWrite, 0, nullptr);
+	}
+}
+
+
 void Game::createCommandBuffers() {
 	// create a command buffer for each framebuffer in swapchain
 	commandBuffers.resize(swapchainFramebuffers.size());
@@ -917,6 +958,8 @@ void Game::createCommandBuffers() {
 		vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
 		vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
+		vkCmdBindDescriptorSets(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descSets[i], 0, nullptr);
+
 		// draw from index buffer
 		vkCmdDrawIndexed(commandBuffers[i], static_cast<uint32_t>(vertexIndices.size()), 1, 0, 0, 0);
 
@@ -951,6 +994,7 @@ void Game::recreateSwapchain() {
 	createFramebuffers();
 	createUniformBuffers();
 	createDescriptorPool();
+	createDescriptorSets();
 	createCommandBuffers();
 }
 
@@ -1020,6 +1064,7 @@ void Game::initVulkan() {
 	createIndexBuffer();
 	createUniformBuffers();
 	createDescriptorPool();
+	createDescriptorSets();
 	createCommandBuffers();
 
 	// semaphores for synchronization
@@ -1038,7 +1083,7 @@ void Game::updateUniformBuffer(uint32_t currImg) {
 	// update UBO
 	UniformBufferObject ubo{};
 
-	ubo.model = glm::rotate(glm::mat4(1.0f), elapsed * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.model = glm::rotate(glm::mat4(1.0f), elapsed * glm::radians(5.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	ubo.proj = glm::perspective(glm::radians(45.0f), swapchainExtent.width / static_cast<float>(swapchainExtent.height), 0.1f, 10.0f);
 
