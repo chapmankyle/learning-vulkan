@@ -79,6 +79,10 @@ private:
 	// command pool manages memory used to store buffers
 	VkCommandPool commandPool;
 
+	// texture image and associated memory
+	VkImage textureImage;
+	VkDeviceMemory textureImageMemory;
+
 	// vertex buffer for vertex information
 	VkBuffer vertexBuffer;
 	VkDeviceMemory vertexBufferMemory;
@@ -207,6 +211,20 @@ private:
 	 * command buffers that are allocated from them.
 	 */
 	void createCommandPool();
+
+	/*
+	 * @brief Creates an image.
+	 */
+	void createImage(
+		uint32_t width, 
+		uint32_t height, 
+		VkFormat format, 
+		VkImageTiling tiling, 
+		VkImageUsageFlags usage, 
+		VkMemoryPropertyFlags properties, 
+		VkImage &image, 
+		VkDeviceMemory &imageMemory
+	);
 
 	/*
 	 * @brief Creates the texture from an image.

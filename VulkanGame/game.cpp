@@ -664,6 +664,61 @@ void Game::createCommandPool() {
 }
 
 
+void Game::createImage(
+	uint32_t width, 
+	uint32_t height, 
+	VkFormat format, 
+	VkImageTiling tiling, 
+	VkImageUsageFlags usage, 
+	VkMemoryPropertyFlags properties, 
+	VkImage &image, 
+	VkDeviceMemory &imageMemory
+) {
+	// create image information
+	VkImageCreateInfo imgInfo{};
+	imgInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	imgInfo.imageType = VK_IMAGE_TYPE_2D;
+
+	imgInfo.extent.width = width;
+	imgInfo.extent.height = height;
+	imgInfo.extent.depth = 1;
+
+	imgInfo.mipLevels = 1;
+	imgInfo.arrayLayers = 1;
+	imgInfo.format = format;
+	imgInfo.tiling = tiling;
+	imgInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	imgInfo.usage = usage;
+	imgInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imgInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	if (vkCreateImage(device, &imgInfo, nullptr, &image) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to create image!");
+	}
+
+	// get memory requirements
+	VkMemoryRequirements memReqs;
+	vkGetImageMemoryRequirements(device, image, &memReqs);
+
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memReqs.size;
+	allocInfo.memoryTypeIndex = Utils::findMemoryType(
+		physicalDevice, 
+		memReqs.memoryTypeBits, 
+		properties
+	);
+
+	// allocate memory
+	if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+		throw std::runtime_error("Failed to allocate image memory!");
+	}
+
+	// bind to image memory
+	vkBindImageMemory(device, image, imageMemory, 0);
+}
+
+
 void Game::createTextureImage() {
 	int textureWidth;
 	int textureHeight;
