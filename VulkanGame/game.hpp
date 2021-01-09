@@ -11,6 +11,9 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 #include <algorithm>
 #include <chrono>
 #include <iostream>
@@ -204,6 +207,11 @@ private:
 	 * command buffers that are allocated from them.
 	 */
 	void createCommandPool();
+
+	/*
+	 * @brief Creates the texture from an image.
+	 */
+	void createTextureImage();
 
 	/**
 	 * @brief Copies the source buffer into the destination buffer.
