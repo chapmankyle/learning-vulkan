@@ -117,10 +117,10 @@ private:
 
 	// vertices to draw on the screen
 	const std::vector<Utils::Vertex> vertices = {
-		{{0.0f, -0.8f}, {1.0f, 0.0f, 0.0f}},
-		{{0.5f, 0.7f}, {0.0f, 1.0f, 0.0f}},
-		{{0.0f, 0.2f}, {0.0f, 0.0f, 1.0f}},
-		{{-0.5f, 0.7f}, {1.0f, 1.0f, 1.0f}}
+		{{-0.25f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+		{{0.25f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+		{{0.75f, 0.5f}, {1.0f, 1.0f, 1.0f}},
+		{{-0.75f, 0.5f}, {0.0f, 0.0f, 1.0f}}
 	};
 
 	// indices for the vertices (using uint16_t because we have fewer than 65535 unique vertices)
