@@ -11,9 +11,6 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 #include <algorithm>
 #include <chrono>
 #include <iostream>
@@ -237,6 +234,11 @@ private:
 	);
 
 	/*
+	 * Ensure that texture image is in correct layout.
+	 */
+	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+
+	/*
 	 * @brief Creates the texture from an image.
 	 */
 	void createTextureImage();
@@ -247,9 +249,9 @@ private:
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 	/*
-	 * Ensure that texture image is in correct layout.
+	 * @brief Copies the buffer into an image.
 	 */
-	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
 	/**
 	 * @brief Creates a buffer.
