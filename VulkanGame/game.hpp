@@ -213,11 +213,21 @@ private:
 	void createCommandPool();
 
 	/*
+	 * @brief Starts recording to a command buffer.
+	 */
+	VkCommandBuffer startRecordingBuffer();
+
+	/*
+	 * @brief Stops recording to the command buffer.
+	 */
+	void stopRecordingBuffer(VkCommandBuffer commandBuffer);
+
+	/*
 	 * @brief Creates an image.
 	 */
 	void createImage(
-		uint32_t width, 
-		uint32_t height, 
+		int width, 
+		int height, 
 		VkFormat format, 
 		VkImageTiling tiling, 
 		VkImageUsageFlags usage, 
@@ -235,6 +245,11 @@ private:
 	 * @brief Copies the source buffer into the destination buffer.
 	 */
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
+	/*
+	 * Ensure that texture image is in correct layout.
+	 */
+	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
 	/**
 	 * @brief Creates a buffer.

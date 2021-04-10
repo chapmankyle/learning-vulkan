@@ -664,9 +664,48 @@ void Game::createCommandPool() {
 }
 
 
+VkCommandBuffer Game::startRecordingBuffer() {
+	// create allocation structure
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandPool = commandPool;
+	allocInfo.commandBufferCount = 1;
+
+	// allocate the command buffer
+	VkCommandBuffer cmdBuffer;
+	vkAllocateCommandBuffers(device, &allocInfo, &cmdBuffer);
+
+	// begin recording
+	VkCommandBufferBeginInfo startInfo{};
+	startInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	startInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+	vkBeginCommandBuffer(cmdBuffer, &startInfo);
+	return cmdBuffer;
+}
+
+
+void Game::stopRecordingBuffer(VkCommandBuffer commandBuffer) {
+	vkEndCommandBuffer(commandBuffer);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	// submit to queue
+	vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+	vkQueueWaitIdle(graphicsQueue);
+
+	// free command buffers
+	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+}
+
+
 void Game::createImage(
-	uint32_t width, 
-	uint32_t height, 
+	int width, 
+	int height, 
 	VkFormat format, 
 	VkImageTiling tiling, 
 	VkImageUsageFlags usage, 
@@ -679,8 +718,8 @@ void Game::createImage(
 	imgInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	imgInfo.imageType = VK_IMAGE_TYPE_2D;
 
-	imgInfo.extent.width = width;
-	imgInfo.extent.height = height;
+	imgInfo.extent.width = static_cast<uint32_t>(width);
+	imgInfo.extent.height = static_cast<uint32_t>(height);
 	imgInfo.extent.depth = 1;
 
 	imgInfo.mipLevels = 1;
@@ -731,7 +770,7 @@ void Game::createTextureImage() {
 	}
 
 	// define image size
-	VkDeviceSize imgSize = textureWidth * textureHeight * 4;
+	VkDeviceSize imgSize = static_cast<VkDeviceSize>(textureWidth * textureHeight * 4);
 
 	// create buffer
 	VkBuffer stagingBuffer;
@@ -752,46 +791,62 @@ void Game::createTextureImage() {
 
 	// free pixel array
 	stbi_image_free(pixels);
+
+	// create image for texture
+	createImage(
+		textureWidth,
+		textureHeight,
+		VK_FORMAT_R8G8B8A8_SRGB,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		textureImage,
+		textureImageMemory
+	);
+
+	// cleanup buffers
+	vkDestroyBuffer(device, stagingBuffer, nullptr);
+	vkFreeMemory(device, stagingBufferMemory, nullptr);
 }
 
 
 void Game::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-	VkCommandBufferAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = commandPool;
-	allocInfo.commandBufferCount = 1;
-
-	VkCommandBuffer commandBuffer;
-	vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
-
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-	// begin recording command buffer
-	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	VkCommandBuffer cmdBuffer = startRecordingBuffer();
 
 	// copy buffer
 	VkBufferCopy copyRegion{};
 	copyRegion.srcOffset = 0;
 	copyRegion.dstOffset = 0;
 	copyRegion.size = size;
-	vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+	vkCmdCopyBuffer(cmdBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
-	// end recording command buffer
-	vkEndCommandBuffer(commandBuffer);
+	stopRecordingBuffer(cmdBuffer);
+}
 
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
 
-	vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-	vkQueueWaitIdle(graphicsQueue);
+void Game::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout) {
+	VkCommandBuffer cmdBuffer = startRecordingBuffer();
 
-	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+	// create memory barrier
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
+
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+	barrier.image = image;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+
+	barrier.srcAccessMask = 0;
+	barrier.dstAccessMask = 0;
+
+	stopRecordingBuffer(cmdBuffer);
 }
 
 
@@ -1334,6 +1389,10 @@ void Game::cleanupSwapchain() {
 
 void Game::cleanup() {
 	cleanupSwapchain();
+
+	// destory textures
+	vkDestroyImage(device, textureImage, nullptr);
+	vkFreeMemory(device, textureImageMemory, nullptr);
 
 	// destroy descriptor set layout
 	vkDestroyDescriptorSetLayout(device, descSetLayout, nullptr);
